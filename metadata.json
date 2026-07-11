@@ -1,0 +1,7 @@
+{
+  "name": "Yommi",
+  "description": "Plataforma marketplace de comida estilo Uber Eats con seguimiento en tiempo real.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

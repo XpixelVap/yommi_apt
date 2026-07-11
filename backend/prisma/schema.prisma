@@ -1,0 +1,254 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password_hash String?
+  profile_image String?
+  provider      String   @default("email") // email | google
+  phone         String?
+  role          String   @default("CLIENT") // ADMIN, CLIENT, DRIVER
+  isSuspended   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  driver     DeliveryDriver?
+  orders     Order[] @relation("ClientOrders")
+  ratings    Rating[]
+}
+
+model Restaurant {
+  id              String   @id @default(uuid())
+  restaurant_name String
+  owner_name      String
+  email           String   @unique
+  phone_number    String
+  password_hash   String
+  address         String?
+  city            String?
+  logo_url        String?
+  status          String   @default("pending_verification") // pending_verification, approved, rejected, suspended
+  
+  // Existing fields to keep the app working
+  description     String?
+  coverUrl        String?
+  cover_image     String?
+  lat             Float?
+  lng             Float?
+  has_delivery    Boolean  @default(false)
+  has_pickup      Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  opening_hours   String?
+  total_orders    Int      @default(0)
+  orders_today    Int      @default(0)
+  rating_score    Float    @default(0)
+  rating_count    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  categories  Category[]
+  products    Product[]
+  orders      Order[]
+  ratings     Rating[]
+}
+
+model Category {
+  id           String     @id @default(uuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name         String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  products     Product[]
+}
+
+model Product {
+  id           String     @id @default(uuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  categoryId   String
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  price        Float
+  imageUrl     String?
+  product_image String?
+  isAvailable  Boolean    @default(true)
+  order_count  Int        @default(0)
+  order_count_today Int   @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  options      ProductOption[]
+  orderItems   OrderItem[]
+}
+
+model ProductOption {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  price     Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DeliveryDriver {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  vehicle   String?
+  plate     String?
+  isOnline  Boolean  @default(false)
+  lat       Float?
+  lng       Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders    Order[]
+}
+
+model RestaurantDirectory {
+  id             String   @id @default(uuid())
+  name           String
+  city           String
+  address        String
+  cuisine_type   String
+  image_url      String?
+  phone          String?
+  whatsapp       String?
+  phone_optional String?
+  instagram      String?
+  status         String   @default("UNCLAIMED") // UNCLAIMED, ACTIVE, SUSPENDED
+  createdAt      DateTime @default(now())
+
+  claims         RestaurantClaimRequest[]
+}
+
+model RestaurantInvitation {
+  id              String   @id @default(uuid())
+  restaurant_name String
+  city            String
+  phone           String?
+  instagram       String?
+  request_count   Int      @default(1)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@map("restaurant_invitations")
+}
+
+model RestaurantClaimRequest {
+  id                    String              @id @default(uuid())
+  restaurantDirectoryId String
+  restaurantDirectory   RestaurantDirectory @relation(fields: [restaurantDirectoryId], references: [id], onDelete: Cascade)
+  name                  String
+  phone                 String
+  email                 String
+  restaurant_name       String
+  verification_message  String?
+  status                String              @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@map("restaurant_claim_requests")
+}
+
+model Order {
+  id               String   @id @default(uuid())
+  clientId         String?
+  client           User?    @relation("ClientOrders", fields: [clientId], references: [id])
+  guestName        String?
+  guestPhone       String?
+  restaurantId     String
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id])
+  driverId         String?
+  driver           DeliveryDriver? @relation(fields: [driverId], references: [id])
+  status           String   @default("PENDING") // PENDING, PREPARING, READY, ON_THE_WAY, DELIVERED, CANCELLED
+  totalAmount      Float
+  deliveryAddress  String
+  deliveryLat      Float?
+  deliveryLng      Float?
+  trackingToken    String?  @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  items            OrderItem[]
+  statusHistory    OrderStatusHistory[]
+  trackingLocations TrackingLocation[]
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  price     Float
+  options   String?  // JSON string of selected options
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderStatusHistory {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    String
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model Banner {
+  id          String   @id @default(uuid())
+  title       String
+  subtitle    String?
+  image       String
+  buttonText  String
+  link        String
+  city        String?
+  order       Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TrackingLocation {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  lat       Float
+  lng       Float
+  timestamp DateTime @default(now())
+}
+
+model Rating {
+  id            String     @id @default(uuid())
+  user_id       String
+  user          User       @relation(fields: [user_id], references: [id])
+  restaurant_id String
+  restaurant    Restaurant @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  rating        Int
+  comment       String?
+  created_at    DateTime   @default(now())
+
+  @@map("ratings")
+}
+
+model Commission {
+  id          String   @id @default(uuid())
+  percentage  Float    @default(15.0)
+  activeFrom  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
