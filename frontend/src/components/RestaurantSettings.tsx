@@ -23,6 +23,14 @@ export function RestaurantSettings({ restaurantId }: { restaurantId?: string }) 
     has_delivery: false,
     has_pickup: false,
     deliveryFeeCents: 0,
+    acceptsPayAtRestaurant: true,
+    acceptsCashOnDelivery: true,
+    acceptsBankTransfer: false,
+    bankName: '',
+    bankAccountHolder: '',
+    bankAccountReference: '',
+    bankTransferInstructions: '',
+    paymentConfirmationPhone: '',
     opening_hours: {
       monday: '09:00-22:00',
       tuesday: '09:00-22:00',
@@ -52,6 +60,14 @@ export function RestaurantSettings({ restaurantId }: { restaurantId?: string }) 
           has_delivery: Boolean(data.has_delivery),
           has_pickup: Boolean(data.has_pickup),
           deliveryFeeCents: Number(data.deliveryFeeCents || 0),
+          acceptsPayAtRestaurant: Boolean(data.acceptsPayAtRestaurant),
+          acceptsCashOnDelivery: Boolean(data.acceptsCashOnDelivery),
+          acceptsBankTransfer: Boolean(data.acceptsBankTransfer),
+          bankName: data.bankName || '',
+          bankAccountHolder: data.bankAccountHolder || '',
+          bankAccountReference: data.bankAccountReference || '',
+          bankTransferInstructions: data.bankTransferInstructions || '',
+          paymentConfirmationPhone: data.paymentConfirmationPhone || '',
           opening_hours: data.opening_hours ? JSON.parse(data.opening_hours) : {
             monday: '09:00-22:00',
             tuesday: '09:00-22:00',
@@ -124,6 +140,10 @@ export function RestaurantSettings({ restaurantId }: { restaurantId?: string }) 
         },
         body: JSON.stringify({
           ...formData,
+          ...(restaurantId ? {
+            bankName: undefined, bankAccountHolder: undefined, bankAccountReference: undefined,
+            bankTransferInstructions: undefined, paymentConfirmationPhone: undefined
+          } : {}),
           opening_hours: JSON.stringify(formData.opening_hours)
         })
       });
@@ -252,6 +272,25 @@ export function RestaurantSettings({ restaurantId }: { restaurantId?: string }) 
               </div>
             )}
           </div>
+        </div>
+        <div>
+          <h3 className="text-lg font-bold mb-4">Métodos de pago</h3>
+          <p className="text-sm text-gray-600 mb-4">Yommi coordina el proceso. No procesa ni recibe el dinero.</p>
+          <div className="space-y-3">
+            <label className="flex items-center gap-3"><input type="checkbox" checked={formData.acceptsPayAtRestaurant} onChange={e => setFormData({...formData, acceptsPayAtRestaurant: e.target.checked})} /><span>Pago al recoger en restaurante</span></label>
+            <label className="flex items-center gap-3"><input type="checkbox" checked={formData.acceptsCashOnDelivery} onChange={e => setFormData({...formData, acceptsCashOnDelivery: e.target.checked})} /><span>Efectivo contra entrega</span></label>
+            <label className="flex items-center gap-3"><input type="checkbox" checked={formData.acceptsBankTransfer} onChange={e => setFormData({...formData, acceptsBankTransfer: e.target.checked})} /><span>Transferencia bancaria anticipada</span></label>
+          </div>
+          {formData.acceptsBankTransfer && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <input disabled={Boolean(restaurantId)} required={!restaurantId} value={formData.bankName} onChange={e => setFormData({...formData, bankName: e.target.value})} placeholder="Nombre del banco" className="px-4 py-2 rounded-xl border border-gray-200 disabled:bg-gray-100" />
+              <input disabled={Boolean(restaurantId)} required={!restaurantId} value={formData.bankAccountHolder} onChange={e => setFormData({...formData, bankAccountHolder: e.target.value})} placeholder="Titular" className="px-4 py-2 rounded-xl border border-gray-200 disabled:bg-gray-100" />
+              <input disabled={Boolean(restaurantId)} required={!restaurantId} value={formData.bankAccountReference} onChange={e => setFormData({...formData, bankAccountReference: e.target.value})} placeholder="CLABE o número de cuenta" className="px-4 py-2 rounded-xl border border-gray-200 disabled:bg-gray-100" />
+              <input disabled={Boolean(restaurantId)} required={!restaurantId} value={formData.paymentConfirmationPhone} onChange={e => setFormData({...formData, paymentConfirmationPhone: e.target.value})} placeholder="WhatsApp para comprobante" className="px-4 py-2 rounded-xl border border-gray-200 disabled:bg-gray-100" />
+              <textarea disabled={Boolean(restaurantId)} value={formData.bankTransferInstructions} onChange={e => setFormData({...formData, bankTransferInstructions: e.target.value})} placeholder="Instrucciones de pago" className="md:col-span-2 px-4 py-2 rounded-xl border border-gray-200 disabled:bg-gray-100" rows={3} />
+              {restaurantId && <p className="md:col-span-2 text-xs text-gray-500">Los datos bancarios están enmascarados para administradores y solo el propietario puede editarlos.</p>}
+            </div>
+          )}
         </div>
         {/* Opening Hours */}
         <div>

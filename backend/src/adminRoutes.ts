@@ -8,6 +8,8 @@ import { InvalidOrderTransitionError, resolveOrderTransition } from './core/orde
 import { getRestaurantReadiness } from './core/restaurant-readiness';
 import { assertRestaurantReadyForApproval, RestaurantNotReadyError } from './core/restaurant-access';
 import { logRestaurantFunnelEvent } from './core/funnel-events';
+import { PaymentRuleError, assertPaymentCompatibleOrderTransition, paymentStatusForCancellation } from './core/payment-orchestration';
+import { toAdminRestaurantDto, toOrderDto } from './core/payment-dtos';
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -170,7 +172,7 @@ adminRouter.get('/restaurants', async (req, res) => {
   const restaurants = await prisma.restaurant.findMany({
     
   });
-  res.json(restaurants);
+  res.json(restaurants.map(toAdminRestaurantDto));
 });
 
 adminRouter.post('/restaurants', async (req, res) => {
@@ -204,7 +206,7 @@ adminRouter.post('/restaurants', async (req, res) => {
       });
     }
 
-    res.json(restaurant);
+    res.json(toAdminRestaurantDto(restaurant));
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to create restaurant' });
@@ -229,7 +231,7 @@ adminRouter.put('/restaurants/:id', async (req, res) => {
       }
     });
 
-    res.json(restaurant);
+    res.json(toAdminRestaurantDto(restaurant));
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to update restaurant' });
@@ -242,7 +244,7 @@ adminRouter.put('/restaurants/:id/isActive', async (req, res) => {
     where: { id: req.params.id },
     data: { isActive }
   });
-  res.json(restaurant);
+  res.json(toAdminRestaurantDto(restaurant));
 });
 
 adminRouter.patch('/restaurants/:id/approve', async (req, res) => {
@@ -272,7 +274,7 @@ adminRouter.patch('/restaurants/:id/approve', async (req, res) => {
       });
     }
     logRestaurantFunnelEvent('restaurant_approved', restaurant.id);
-    res.json({ restaurant, readiness });
+    res.json({ restaurant: toAdminRestaurantDto(restaurant), readiness });
   } catch (error) {
     if (error instanceof RestaurantNotReadyError) {
       return res.status(409).json({
@@ -290,7 +292,7 @@ adminRouter.patch('/restaurants/:id/reject', async (req, res) => {
       where: { id: restaurantId },
       data: { status: 'rejected', isActive: false }
     });
-    res.json(restaurant);
+    res.json(toAdminRestaurantDto(restaurant));
   } catch (error) {
     console.error('Error rejecting restaurant:', error);
     res.status(500).json({ error: 'Failed to reject restaurant' });
@@ -440,7 +442,7 @@ adminRouter.get('/orders', async (req, res) => {
     include: { restaurant: true, client: true },
     orderBy: { createdAt: 'desc' }
   });
-  res.json(orders);
+  res.json(orders.map(order => toOrderDto(order, false)));
 });
 
 adminRouter.put('/orders/:id/status', async (req, res) => {
@@ -449,16 +451,20 @@ adminRouter.put('/orders/:id/status', async (req, res) => {
     if (!existingOrder) return res.status(404).json({ error: 'Order not found' });
 
     const status = resolveOrderTransition(existingOrder.status, req.body.status);
+    assertPaymentCompatibleOrderTransition(existingOrder.paymentMethod, existingOrder.paymentStatus, status);
+    const paymentStatus = status === 'CANCELLED'
+      ? paymentStatusForCancellation(existingOrder.paymentStatus)
+      : existingOrder.paymentStatus;
     const order = await prisma.order.update({
       where: { id: req.params.id },
-      data: { status }
+      data: { status, paymentStatus }
     });
     await prisma.orderStatusHistory.create({
       data: { orderId: order.id, status, notes: 'Status updated by platform admin' }
     });
-    res.json(order);
+    res.json(toOrderDto(order, false));
   } catch (error) {
-    if (error instanceof InvalidOrderTransitionError) {
+    if (error instanceof InvalidOrderTransitionError || error instanceof PaymentRuleError) {
       return res.status(409).json({ error: error.message });
     }
     res.status(500).json({ error: 'Server error' });

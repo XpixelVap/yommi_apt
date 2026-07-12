@@ -718,3 +718,21 @@ La arquitectura objetivo se considera adoptada cuando:
 - La plataforma puede desactivar IA, WhatsApp o notificaciones sin impedir pedidos.
 - El mismo backend soporta varias réplicas sin cron duplicado, archivos locales o estado crítico en memoria.
 - Una nueva capacidad puede añadirse como módulo sin modificar transversalmente todo el sistema.
+
+## Orquestación de pagos sin intermediación
+
+El contexto `orders` incorpora una política de pago, no un procesador financiero. Yommi no recibe, retiene, valida ni concilia fondos. Los métodos y estados canónicos se centralizan en TypeScript y las rutas operativas y administrativas consumen las mismas reglas.
+
+Reglas arquitectónicas:
+
+- `PICKUP` solo admite `PAY_AT_RESTAURANT`; delivery solo métodos habilitados por el restaurante.
+- Transferencia requiere configuración mínima y confirmación humana antes de preparar.
+- Ningún pedido llega a `DELIVERED` sin `PAID`.
+- La confirmación y entrega de efectivo/pickup puede ejecutarse en una transacción atómica.
+- Confirmar es idempotente y conserva el primer actor/timestamp.
+- Un pago confirmado no puede cancelarse por el flujo normal porque Yommi no ofrece reembolsos.
+- Los históricos nullable se presentan como `LEGACY_UNKNOWN` sin backfill inferido.
+- Los datos bancarios se manejan con DTOs allowlist: nunca aparecen en directorios, búsquedas, métricas, logs o eventos WebSocket. La referencia completa solo se entrega al propietario durante edición o dentro de un pedido de transferencia autorizado.
+- El adaptador temporal para clientes antiguos resuelve ausencia de método de forma determinista: pickup usa pago en restaurante; delivery prefiere el flujo histórico de efectivo. Debe retirarse tras sincronizar despliegues.
+
+Este contexto no introduce SDKs de pasarela, webhooks financieros, ledger, conciliación ni dependencias externas.

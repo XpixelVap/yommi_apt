@@ -12,6 +12,7 @@ export function RestaurantDashboard() {
   const [socket, setSocket] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'settings'>('orders');
   const [readiness, setReadiness] = useState<any>(null);
+  const [operationError, setOperationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || user.role !== 'RESTAURANT') {
@@ -45,8 +46,8 @@ export function RestaurantDashboard() {
 
         currentSocket = io(import.meta.env.VITE_API_URL || '');
         setSocket(currentSocket);
-        currentSocket.on('orderStatusUpdated', (data: { orderId: string, status: string }) => {
-          setOrders(prev => prev.map(order => order.id === data.orderId ? { ...order, status: data.status } : order));
+        currentSocket.on('orderStatusUpdated', (data: { orderId: string, status: string, paymentStatus?: string }) => {
+          setOrders(prev => prev.map(order => order.id === data.orderId ? { ...order, status: data.status, paymentStatus: data.paymentStatus ?? order.paymentStatus } : order));
         });
         currentSocket.on('newOrder', (order: any) => {
           if (order.restaurantId === user.restaurantId || order.restaurantId === user.id) {
@@ -70,20 +71,31 @@ export function RestaurantDashboard() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/orders/${orderId}/status`, {
         method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status })
       });
-      if (res.ok) {
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo actualizar el pedido');
+      setOrders(prev => prev.map(o => o.id === orderId ? data : o));
+      setOperationError(null);
     } catch (error) {
-      console.error(error);
+      setOperationError(error instanceof Error ? error.message : 'No se pudo actualizar el pedido');
     }
   };
 
+  const runPaymentAction = async (orderId: string, action: 'confirm' | 'confirm-and-deliver') => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/orders/${orderId}/payment/${action}`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo confirmar el pago');
+      setOrders(prev => prev.map(o => o.id === orderId ? data : o));
+      setOperationError(null);
+    } catch (error) {
+      setOperationError(error instanceof Error ? error.message : 'No se pudo confirmar el pago');
+    }
+  };
   const activeOrders = orders.filter((o: any) => !['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(o.status));
   const pastOrders = orders.filter((o: any) => ['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(o.status));
 
@@ -125,6 +137,7 @@ export function RestaurantDashboard() {
         </div>
       </div>
 
+      {operationError && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">{operationError}</div>}
       {activeTab === 'orders' ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
@@ -151,6 +164,7 @@ export function RestaurantDashboard() {
                       <div className="text-sm font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-lg inline-block mt-1">
                         {order.status}
                       </div>
+                      <div className="text-xs mt-2 text-gray-600">{order.paymentStatus === 'PAID' ? 'Pago confirmado' : order.paymentMethod === 'BANK_TRANSFER' ? 'Esperando confirmación del restaurante' : order.paymentMethod === 'PAY_AT_RESTAURANT' ? 'Pago en restaurante' : 'Pago en efectivo al recibir'}</div>
                     </div>
                   </div>
                   
@@ -165,7 +179,10 @@ export function RestaurantDashboard() {
                     </ul>
                   </div>
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 flex-wrap">
+                    {order.paymentMethod === 'BANK_TRANSFER' && order.paymentStatus === 'AWAITING_CONFIRMATION' && (
+                      <button onClick={() => runPaymentAction(order.id, 'confirm')} className="flex-1 bg-green-600 text-white py-2 rounded-xl font-medium hover:bg-green-700">Confirmar transferencia</button>
+                    )}
                     {order.status === 'PENDING' && (
                       <button 
                         onClick={() => updateOrderStatus(order.id, 'ACCEPTED')}
@@ -191,19 +208,20 @@ export function RestaurantDashboard() {
                       </button>
                     )}
                     {order.status === 'READY' && (
-                      <button 
-                        onClick={() => updateOrderStatus(order.id, 'ON_THE_WAY')}
+                      <button
+                        onClick={() => order.fulfillmentType === 'PICKUP'
+                          ? (order.paymentStatus === 'PAID' ? updateOrderStatus(order.id, 'DELIVERED') : runPaymentAction(order.id, 'confirm-and-deliver'))
+                          : updateOrderStatus(order.id, 'ON_THE_WAY')}
                         className="flex-1 bg-indigo-600 text-white py-2 rounded-xl font-medium hover:bg-indigo-700 transition-colors"
                       >
-                        En Camino
+                        {order.fulfillmentType === 'PICKUP' ? (order.paymentStatus === 'PAID' ? 'Entregar pedido' : 'Cobrar y entregar') : 'En Camino'}
                       </button>
-                    )}
-                    {['ON_THE_WAY', 'IN_TRANSIT'].includes(order.status) && (
+                    )}                    {['ON_THE_WAY', 'IN_TRANSIT'].includes(order.status) && (
                       <button 
-                        onClick={() => updateOrderStatus(order.id, 'DELIVERED')}
+                        onClick={() => order.paymentStatus === 'PAID' ? updateOrderStatus(order.id, 'DELIVERED') : runPaymentAction(order.id, 'confirm-and-deliver')}
                         className="flex-1 bg-orange-600 text-white py-2 rounded-xl font-medium hover:bg-orange-700 transition-colors"
                       >
-                        Entregado
+                        {order.paymentStatus === 'PAID' ? 'Entregado' : 'Cobrar y entregar'}
                       </button>
                     )}
                     {order.status === 'PENDING' && (

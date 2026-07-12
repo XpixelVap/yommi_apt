@@ -501,3 +501,11 @@ Para el cliente final:
 Para el equipo de producto:
 
 > Primero hacemos que el canal directo funcione. Después automatizamos y potenciamos lo que ya aporta valor.
+
+## Orquestación de cobro del pedido
+
+Yommi no procesa pagos. Yommi coordina el proceso de venta. El restaurante conserva el control de sus cobros.
+
+La plataforma puede registrar el método elegido, comunicar instrucciones y coordinar una confirmación humana del restaurante, pero no recibe, retiene, valida ni concilia dinero del pedido. Una confirmación en Yommi representa exclusivamente la declaración operativa del restaurante; no es evidencia bancaria. No se implementan reembolsos y un pedido ya pagado requiere resolución manual si necesita cancelarse.
+
+Los pagos de pedidos permanecen separados de la facturación de la mensualidad SaaS. En el MVP solo se coordinan pago al recoger, efectivo contra entrega y transferencia anticipada configurada por el restaurante.

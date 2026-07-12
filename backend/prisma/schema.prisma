@@ -48,7 +48,15 @@ model Restaurant {
   lng             Float?
   has_delivery    Boolean  @default(false)
   has_pickup      Boolean  @default(false)
-  deliveryFeeCents Int      @default(0)
+  deliveryFeeCents          Int      @default(0)
+  acceptsPayAtRestaurant    Boolean  @default(true)
+  acceptsCashOnDelivery     Boolean  @default(true)
+  acceptsBankTransfer       Boolean  @default(false)
+  bankName                  String?
+  bankAccountHolder         String?
+  bankAccountReference      String?
+  bankTransferInstructions  String?
+  paymentConfirmationPhone  String?
   isActive        Boolean  @default(true)
   opening_hours   String?
   total_orders    Int      @default(0)
@@ -184,7 +192,12 @@ model Order {
   deliveryLat      Float?
   deliveryLng      Float?
   fulfillmentType  String?  // null = LEGACY/UNKNOWN; new orders must persist PICKUP or DELIVERY
-  deliveryFeeCents Int      @default(0)
+  deliveryFeeCents        Int       @default(0)
+  paymentMethod          String?   // null = LEGACY_UNKNOWN; new orders persist a canonical value
+  paymentStatus          String?   // null = LEGACY_UNKNOWN; new orders persist a canonical value
+  paymentConfirmedAt     DateTime?
+  paymentConfirmedById   String?
+  paymentConfirmedByRole String?
   trackingToken    String?  @unique
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

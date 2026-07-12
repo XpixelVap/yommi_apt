@@ -159,3 +159,33 @@ Todos los cambios relevantes de Yommi 2.0 se documentarán en este archivo.
 - La migración no fue ejecutada y no se modificaron datos históricos.
 - Prisma generate y validate finalizaron correctamente; 9 pruebas pasaron; typecheck y build de frontend/backend pasaron.
 - No se ejecutaron `prisma migrate`, `db push`, migraciones destructivas, cambios de dependencias ni commits.
+## Sprint 4 - Orquestación de métodos de pago - 2026-07-12
+
+### Principio de producto
+
+- Yommi coordina el proceso de venta, pero no procesa, recibe, retiene, valida ni concilia dinero.
+- Se mantuvo la separación entre cobros restaurante-cliente y facturación de la mensualidad SaaS.
+
+### Configuración y privacidad
+
+- El restaurante puede configurar pago al recoger, efectivo contra entrega y transferencia bancaria anticipada.
+- Transferencia exige banco, titular, cuenta/CLABE y teléfono de confirmación.
+- Se añadieron DTOs explícitos que eliminan contraseña y datos bancarios de respuestas públicas, listados, búsquedas, WebSockets y pedidos no-transferencia.
+- Administradores reciben la referencia bancaria enmascarada; solo el propietario puede editarla completa.
+- El tracking específico exige sesión autorizada o token de seguimiento antes de entregar instrucciones bancarias.
+
+### Reglas operativas
+
+- Pickup solo admite `PAY_AT_RESTAURANT`; delivery admite efectivo/transferencia según configuración.
+- Transferencia comienza en `AWAITING_CONFIRMATION` y bloquea `PREPARING` hasta confirmación.
+- Efectivo y pago al recoger comienzan en `PENDING` y pueden prepararse sin confirmación previa.
+- Ningún pedido puede llegar a `DELIVERED` sin `PAID`.
+- Se agregó confirmación idempotente y acción transaccional para cobrar y entregar efectivo/pickup.
+- Cancelar un pedido no pagado cambia el pago a `CANCELLED`; pedidos pagados devuelven HTTP 409 y requieren resolución manual.
+- Históricos conservan método/estado null y se leen como `LEGACY_UNKNOWN`.
+
+### Migración y calidad
+
+- Se creó una migración aditiva con configuración de restaurante y auditoría de pago en pedidos.
+- No se ejecutaron `prisma migrate`, `db push`, migraciones destructivas, reembolsos ni integraciones de pasarela.
+- Se ampliaron pruebas de pricing, métodos, ownership, privacidad, idempotencia, históricos y transiciones.

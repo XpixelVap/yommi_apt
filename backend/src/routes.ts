@@ -28,6 +28,18 @@ import {
 } from './core/restaurant-readiness';
 import { canConfigureRestaurant, canOperateRestaurant } from './core/restaurant-access';
 import { logRestaurantFunnelEvent } from './core/funnel-events';
+import {
+  PAYMENT_METHODS,
+  PaymentRuleError,
+  assertPaymentCompatibleOrderTransition,
+  canActorConfirmPayment,
+  confirmPayment,
+  initialPaymentStatus,
+  hasMinimumBankConfiguration,
+  paymentStatusForCancellation,
+  resolvePaymentMethod
+} from './core/payment-orchestration';
+import { toOrderDto, toPublicRestaurantDto, toRestaurantPaymentSettingsDto } from './core/payment-dtos';
 
 const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
 
@@ -283,7 +295,7 @@ function toRestaurantSessionUser(restaurant: any) {
   };
 }
 
-function toRestaurantProfile(restaurant: any) {
+function toRestaurantProfile(restaurant: any, revealBankReference = false) {
   return {
     id: restaurant.id,
     restaurant_name: restaurant.restaurant_name,
@@ -303,7 +315,8 @@ function toRestaurantProfile(restaurant: any) {
     deliveryFeeCents: restaurant.deliveryFeeCents,
     opening_hours: restaurant.opening_hours,
     status: restaurant.status,
-    isActive: restaurant.isActive
+    isActive: restaurant.isActive,
+    ...toRestaurantPaymentSettingsDto(restaurant, revealBankReference)
   };
 }
 
@@ -638,7 +651,7 @@ apiRouter.get('/restaurants', cacheMiddleware(60), async (req, res, next) => {
       
       const paginatedFiltered = filtered.slice(skip, skip + pageSize);
       return res.json({
-        data: paginatedFiltered,
+        data: paginatedFiltered.map(toPublicRestaurantDto),
         pagination: {
           total: filtered.length,
           page: pageNumber,
@@ -668,7 +681,7 @@ apiRouter.get('/restaurants', cacheMiddleware(60), async (req, res, next) => {
   ]);
 
   res.json({
-    data: restaurants,
+    data: restaurants.map(toPublicRestaurantDto),
     pagination: {
       total,
       page: pageNumber,
@@ -734,7 +747,7 @@ apiRouter.get('/popular-today', cacheMiddleware(180), async (req, res) => {
     const popularProducts = Object.values(productCounts)
       .sort((a, b) => b.count - a.count)
       .slice(0, 10)
-      .map(p => ({ ...p.product, recent_orders: p.count }));
+      .map(p => ({ ...p.product, restaurant: toPublicRestaurantDto(p.product.restaurant), recent_orders: p.count }));
 
     if (popularProducts.length === 0) {
       const fallbackProducts = await prisma.product.findMany({
@@ -742,7 +755,7 @@ apiRouter.get('/popular-today', cacheMiddleware(180), async (req, res) => {
         take: 10,
         include: { restaurant: true }
       });
-      return res.json(fallbackProducts.map(p => ({ ...p, recent_orders: Math.floor(Math.random() * 10) + 1 })));
+      return res.json(fallbackProducts.map(p => ({ ...p, restaurant: toPublicRestaurantDto(p.restaurant), recent_orders: Math.floor(Math.random() * 10) + 1 })));
     }
 
     res.json(popularProducts);
@@ -876,7 +889,7 @@ apiRouter.get('/restaurants/slug/:slug', async (req, res) => {
       return res.status(404).json({ error: 'Restaurant not found' });
     }
     const { password_hash: _passwordHash, products: _products, ...publicRestaurant } = restaurant;
-    return res.json(publicRestaurant);
+    return res.json(toPublicRestaurantDto(publicRestaurant));
   }
 
   const directoryNames = await prisma.restaurantDirectory.findMany({
@@ -966,7 +979,7 @@ apiRouter.get('/restaurants/:id', async (req, res) => {
       return res.status(404).json({ error: 'Restaurant not found' });
     }
     const { password_hash: _passwordHash, products: _products, ...publicRestaurant } = restaurant;
-    return res.json(publicRestaurant);
+    return res.json(toPublicRestaurantDto(publicRestaurant));
   }
 
   const directory = await prisma.restaurantDirectory.findUnique({
@@ -1079,7 +1092,15 @@ const restaurantProfileSchema = z.object({
   opening_hours: z.string().optional(),
   has_delivery: z.boolean().optional(),
   has_pickup: z.boolean().optional(),
-  deliveryFeeCents: z.number().int().nonnegative().optional()
+  deliveryFeeCents: z.number().int().nonnegative().optional(),
+  acceptsPayAtRestaurant: z.boolean().optional(),
+  acceptsCashOnDelivery: z.boolean().optional(),
+  acceptsBankTransfer: z.boolean().optional(),
+  bankName: z.string().trim().max(100).nullable().optional(),
+  bankAccountHolder: z.string().trim().max(150).nullable().optional(),
+  bankAccountReference: z.string().trim().min(4).max(40).nullable().optional(),
+  bankTransferInstructions: z.string().trim().max(500).nullable().optional(),
+  paymentConfirmationPhone: z.string().trim().max(30).nullable().optional()
 }).strict();
 
 const categoryPayloadSchema = z.object({ name: z.string().trim().min(1) }).strict();
@@ -1099,7 +1120,7 @@ apiRouter.get('/restaurant/profile', authMiddleware, async (req: any, res) => {
     const restaurant = await prisma.restaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant) return res.status(404).json({ error: 'Restaurant not found' });
     if (!canConfigureRestaurant(restaurant)) return res.status(403).json({ error: 'Restaurant cannot be configured in its current state' });
-    res.json(toRestaurantProfile(restaurant));
+    res.json(toRestaurantProfile(restaurant, req.user.role === 'RESTAURANT'));
   } catch {
     res.status(500).json({ error: 'Server error' });
   }
@@ -1131,6 +1152,17 @@ apiRouter.put('/restaurant/profile', authMiddleware, async (req: any, res) => {
     if (data.has_delivery === false && data.has_pickup === false) {
       return res.status(400).json({ error: 'At least one fulfillment method must be enabled' });
     }
+    const nextPaymentConfig = { ...existing, ...data };
+    if (nextPaymentConfig.acceptsBankTransfer && !hasMinimumBankConfiguration(nextPaymentConfig)) {
+      return res.status(400).json({ error: 'Bank transfer requires bank, holder, account reference and confirmation phone' });
+    }
+    if (nextPaymentConfig.has_pickup && !nextPaymentConfig.acceptsPayAtRestaurant) {
+      return res.status(400).json({ error: 'Pickup requires payment at restaurant' });
+    }
+    if (nextPaymentConfig.has_delivery && !nextPaymentConfig.acceptsCashOnDelivery
+      && !(nextPaymentConfig.acceptsBankTransfer && hasMinimumBankConfiguration(nextPaymentConfig))) {
+      return res.status(400).json({ error: 'Delivery requires cash on delivery or a configured bank transfer' });
+    }
 
     const restaurant = await prisma.restaurant.update({
       where: { id: restaurantId },
@@ -1146,11 +1178,21 @@ apiRouter.put('/restaurant/profile', authMiddleware, async (req: any, res) => {
         opening_hours: data.opening_hours,
         has_delivery: data.has_delivery,
         has_pickup: data.has_pickup,
-        deliveryFeeCents: data.deliveryFeeCents
+        deliveryFeeCents: data.deliveryFeeCents,
+        acceptsPayAtRestaurant: data.acceptsPayAtRestaurant,
+        acceptsCashOnDelivery: data.acceptsCashOnDelivery,
+        acceptsBankTransfer: data.acceptsBankTransfer,
+        ...(req.user.role === 'RESTAURANT' ? {
+          bankName: data.bankName,
+          bankAccountHolder: data.bankAccountHolder,
+          bankAccountReference: data.bankAccountReference,
+          bankTransferInstructions: data.bankTransferInstructions,
+          paymentConfirmationPhone: data.paymentConfirmationPhone
+        } : {})
       }
     });
     await logReadinessMilestones(restaurantId);
-    res.json(toRestaurantProfile(restaurant));
+    res.json(toRestaurantProfile(restaurant, req.user.role === 'RESTAURANT'));
   } catch (error) {
     if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues[0].message });
     res.status(500).json({ error: 'Server error' });
@@ -1272,6 +1314,7 @@ apiRouter.delete('/restaurant/products/:id', authMiddleware, async (req: any, re
 const createOrderSchema = z.object({
   restaurantId: z.string().min(1),
   fulfillmentType: z.enum(['PICKUP', 'DELIVERY']),
+  paymentMethod: z.enum(PAYMENT_METHODS).optional(),
   items: z.array(z.object({
     productId: z.string().min(1),
     quantity: z.number().int().positive(),
@@ -1303,6 +1346,10 @@ apiRouter.post('/orders', optionalAuthMiddleware, async (req: any, res) => {
       return res.status(404).json({ error: 'Restaurant not found or not accepting orders' });
     }
     const restaurant = restaurantResult.restaurant;
+    const paymentMethod = resolvePaymentMethod(
+      input.fulfillmentType, input.paymentMethod, restaurant
+    );
+    const paymentStatus = initialPaymentStatus(paymentMethod);
     if (input.fulfillmentType === 'PICKUP' && !restaurant.has_pickup) {
       return res.status(400).json({ error: 'Pickup is not enabled for this restaurant' });
     }
@@ -1335,6 +1382,8 @@ apiRouter.post('/orders', optionalAuthMiddleware, async (req: any, res) => {
         totalAmount: pricing.totalAmount,
         fulfillmentType: input.fulfillmentType,
         deliveryFeeCents: pricing.deliveryFeeCents,
+        paymentMethod,
+        paymentStatus,
         deliveryAddress: input.fulfillmentType === 'PICKUP'
           ? (restaurant.address || restaurant.restaurant_name)
           : input.deliveryAddress!,
@@ -1357,11 +1406,12 @@ apiRouter.post('/orders', optionalAuthMiddleware, async (req: any, res) => {
 
     logRestaurantFunnelEvent('restaurant_first_order_received', order.restaurantId, { orderId: order.id });
     const io = req.app.get('io');
-    if (io) io.emit('newOrder', order);
-    res.status(201).json(order);
+    const safeOrder = toOrderDto(order, true);
+    if (io) io.emit('newOrder', toOrderDto(order, false));
+    res.status(201).json(safeOrder);
   } catch (error) {
     if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues[0].message });
-    if (error instanceof OrderPricingError) return res.status(400).json({ error: error.message });
+    if (error instanceof OrderPricingError || error instanceof PaymentRuleError) return res.status(400).json({ error: error.message });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -1389,7 +1439,7 @@ apiRouter.get('/orders', authMiddleware, async (req: any, res) => {
       include: { restaurant: true, items: { include: { product: true } }, driver: true },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(orders);
+    res.json(orders.map(order => toOrderDto(order, req.user.role === 'CLIENT')));
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -1410,15 +1460,39 @@ apiRouter.get('/restaurant/orders', authMiddleware, async (req: any, res) => {
       include: { items: { include: { product: true } }, client: true, driver: true },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(orders);
+    res.json(orders.map(order => toOrderDto(order, req.user.role === 'CLIENT')));
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
+async function authorizePaymentActor(req: any, order: { restaurantId: string }) {
+  const actor = { id: req.user.userId as string, role: req.user.role as string };
+  if (!canActorConfirmPayment(actor, order.restaurantId)) {
+    throw new PaymentRuleError('Only the restaurant owner or an administrator can confirm payment');
+  }
+  return actor;
+}
+
+async function recordDeliveredCounters(tx: any, order: { restaurantId: string; items: Array<{ productId: string; quantity: number }> }) {
+  for (const item of order.items) {
+    await tx.product.update({
+      where: { id: item.productId },
+      data: { order_count: { increment: item.quantity }, order_count_today: { increment: item.quantity } }
+    });
+  }
+  await tx.restaurant.update({
+    where: { id: order.restaurantId },
+    data: { total_orders: { increment: 1 }, orders_today: { increment: 1 } }
+  });
+}
+
 apiRouter.patch('/orders/:id/status', authMiddleware, async (req: any, res) => {
   try {
-    const orderToUpdate = await prisma.order.findUnique({ where: { id: req.params.id } });
+    const orderToUpdate = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: { items: true }
+    });
     if (!orderToUpdate) return res.status(404).json({ error: 'Order not found' });
 
     if (req.user.role === 'RESTAURANT') {
@@ -1428,60 +1502,126 @@ apiRouter.patch('/orders/:id/status', authMiddleware, async (req: any, res) => {
       }
     } else if (req.user.role === 'DRIVER') {
       const driver = await prisma.deliveryDriver.findUnique({ where: { userId: req.user.userId } });
-      if (!driver || orderToUpdate.driverId !== driver.id) {
-        return res.status(403).json({ error: 'Forbidden: You are not assigned to this order' });
-      }
+      if (!driver || orderToUpdate.driverId !== driver.id) return res.status(403).json({ error: 'Forbidden: You are not assigned to this order' });
     } else {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
     const status = resolveOrderTransition(orderToUpdate.status, req.body.status);
+    assertPaymentCompatibleOrderTransition(orderToUpdate.paymentMethod, orderToUpdate.paymentStatus, status);
+    const paymentStatus = status === 'CANCELLED'
+      ? paymentStatusForCancellation(orderToUpdate.paymentStatus)
+      : orderToUpdate.paymentStatus;
 
-    const order = await prisma.order.update({
-      where: { id: req.params.id },
-      data: { status },
-      include: { restaurant: true, client: true, items: true }
-    });
-    await prisma.orderStatusHistory.create({
-      data: { orderId: order.id, status, notes: `Status updated to ${status}` }
-    });
-
-    if (status === 'DELIVERED') {
-      for (const item of order.items) {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data: { 
-            order_count: { increment: item.quantity },
-            order_count_today: { increment: item.quantity }
-          }
-        });
-      }
-      
-      await prisma.restaurant.update({
-        where: { id: order.restaurantId },
-        data: {
-          total_orders: { increment: 1 },
-          orders_today: { increment: 1 }
-        }
+    const order = await prisma.$transaction(async tx => {
+      const updated = await tx.order.update({
+        where: { id: orderToUpdate.id },
+        data: { status, paymentStatus },
+        include: { restaurant: true, client: true, items: { include: { product: true } } }
       });
-    }
+      await tx.orderStatusHistory.create({
+        data: { orderId: updated.id, status, notes: `Status updated to ${status}` }
+      });
+      if (status === 'DELIVERED') await recordDeliveredCounters(tx, orderToUpdate);
+      return updated;
+    });
 
     const io = req.app.get('io');
     if (io) {
-      io.emit('orderStatusUpdated', { orderId: order.id, status });
-      io.to(`order_${order.id}`).emit('orderStatusUpdated', { orderId: order.id, status });
+      const event = { orderId: order.id, status, paymentStatus: order.paymentStatus };
+      io.emit('orderStatusUpdated', event);
+      io.to(`order_${order.id}`).emit('orderStatusUpdated', event);
     }
-
-    res.json(order);
+    res.json(toOrderDto(order, false));
   } catch (error) {
-    if (error instanceof InvalidOrderTransitionError) {
+    if (error instanceof InvalidOrderTransitionError || error instanceof PaymentRuleError) {
       return res.status(409).json({ error: error.message });
     }
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-apiRouter.get('/orders/:id/tracking', async (req, res) => {
+apiRouter.post('/orders/:id/payment/confirm', authMiddleware, async (req: any, res) => {
+  try {
+    const existing = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: { restaurant: true, client: true, items: { include: { product: true } } }
+    });
+    if (!existing) return res.status(404).json({ error: 'Order not found' });
+    const actor = await authorizePaymentActor(req, existing);
+    const confirmation = confirmPayment(existing.paymentStatus, actor.id, actor.role, new Date(), existing);
+    if (!confirmation.changed) return res.json(toOrderDto(existing, false));
+
+    const order = await prisma.order.update({
+      where: { id: existing.id },
+      data: {
+        paymentStatus: confirmation.paymentStatus,
+        paymentConfirmedAt: confirmation.paymentConfirmedAt,
+        paymentConfirmedById: confirmation.paymentConfirmedById,
+        paymentConfirmedByRole: confirmation.paymentConfirmedByRole
+      },
+      include: { restaurant: true, client: true, items: { include: { product: true } } }
+    });
+    const io = req.app.get('io');
+    if (io) io.to(`order_${order.id}`).emit('paymentStatusUpdated', { orderId: order.id, paymentStatus: 'PAID' });
+    res.json(toOrderDto(order, false));
+  } catch (error) {
+    if (error instanceof PaymentRuleError) return res.status(409).json({ error: error.message });
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+apiRouter.post('/orders/:id/payment/confirm-and-deliver', authMiddleware, async (req: any, res) => {
+  try {
+    const existing = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: { restaurant: true, client: true, items: { include: { product: true } } }
+    });
+    if (!existing) return res.status(404).json({ error: 'Order not found' });
+    await authorizePaymentActor(req, existing);
+    if (existing.paymentStatus === 'PAID' && existing.status === 'DELIVERED') {
+      return res.json(toOrderDto(existing, false));
+    }
+    if (!['CASH_ON_DELIVERY', 'PAY_AT_RESTAURANT'].includes(existing.paymentMethod || '')) {
+      throw new PaymentRuleError('This atomic action is only available for payment on delivery or pickup');
+    }
+    const status = resolveOrderTransition(existing.status, 'DELIVERED');
+    const actor = await authorizePaymentActor(req, existing);
+    const confirmation = confirmPayment(existing.paymentStatus, actor.id, actor.role, new Date(), existing);
+
+    const order = await prisma.$transaction(async tx => {
+      const updated = await tx.order.update({
+        where: { id: existing.id },
+        data: {
+          status,
+          paymentStatus: 'PAID',
+          paymentConfirmedAt: confirmation.paymentConfirmedAt,
+          paymentConfirmedById: confirmation.paymentConfirmedById,
+          paymentConfirmedByRole: confirmation.paymentConfirmedByRole
+        },
+        include: { restaurant: true, client: true, items: { include: { product: true } } }
+      });
+      await tx.orderStatusHistory.create({
+        data: { orderId: updated.id, status: 'DELIVERED', notes: 'Payment confirmed and order delivered atomically' }
+      });
+      await recordDeliveredCounters(tx, existing);
+      return updated;
+    });
+    const io = req.app.get('io');
+    if (io) {
+      const event = { orderId: order.id, status: 'DELIVERED', paymentStatus: 'PAID' };
+      io.emit('orderStatusUpdated', event);
+      io.to(`order_${order.id}`).emit('orderStatusUpdated', event);
+    }
+    res.json(toOrderDto(order, false));
+  } catch (error) {
+    if (error instanceof InvalidOrderTransitionError || error instanceof PaymentRuleError) {
+      return res.status(409).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+apiRouter.get('/orders/:id/tracking', optionalAuthMiddleware, async (req: any, res) => {
   try {
     const order = await prisma.order.findUnique({
       where: { id: req.params.id },
@@ -1496,8 +1636,13 @@ apiRouter.get('/orders/:id/tracking', async (req, res) => {
     if (!order) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }
-    
-    res.json(order);
+    const authorized = req.query.token === order.trackingToken
+      || (req.user?.role === 'CLIENT' && req.user.userId === order.clientId)
+      || (req.user?.role === 'RESTAURANT' && req.user.userId === order.restaurantId)
+      || req.user?.role === 'ADMIN';
+    if (!authorized) return res.status(403).json({ error: 'Forbidden' });
+
+    res.json(toOrderDto(order, true));
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }

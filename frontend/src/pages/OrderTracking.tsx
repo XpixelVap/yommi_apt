@@ -1,16 +1,23 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { useAuthStore } from '../store';
 import { io } from 'socket.io-client';
 
 export function OrderTracking() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const { token } = useAuthStore();
   const [order, setOrder] = useState<any>(null);
   const [driverLocation, setDriverLocation] = useState<{lat: number, lng: number} | null>(null);
   const [socket, setSocket] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL || ""}/api/orders/${id}/tracking`)
+    const trackingToken = searchParams.get('token') || localStorage.getItem('lastOrderTrackingToken');
+    const query = trackingToken ? `?token=${encodeURIComponent(trackingToken)}` : '';
+    fetch(`${import.meta.env.VITE_API_URL || ""}/api/orders/${id}/tracking${query}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
       .then(async res => {
         if (!res.ok) {
           const data = await res.json();
@@ -41,11 +48,14 @@ export function OrderTracking() {
     });
 
     newSocket.on('orderStatusUpdated', (data) => {
-      setOrder((prev: any) => ({ ...prev, status: data.status }));
+      setOrder((prev: any) => ({ ...prev, status: data.status, paymentStatus: data.paymentStatus ?? prev.paymentStatus }));
+    });
+    newSocket.on('paymentStatusUpdated', (data) => {
+      setOrder((prev: any) => ({ ...prev, paymentStatus: data.paymentStatus }));
     });
 
     return () => { newSocket.close(); };
-  }, [id]);
+  }, [id, searchParams, token]);
 
   if (error) {
     return (
@@ -77,6 +87,20 @@ export function OrderTracking() {
           </span>
         </div>
 
+        <div className="mb-6 bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm">
+          <p className="font-bold">{order.paymentStatus === 'PAID' ? 'Pago confirmado' : order.paymentMethod === 'BANK_TRANSFER' ? 'Esperando confirmación del restaurante' : order.paymentMethod === 'PAY_AT_RESTAURANT' ? 'Pago en restaurante' : order.paymentMethod === 'CASH_ON_DELIVERY' ? 'Pago en efectivo al recibir' : 'Pago legacy/desconocido'}</p>
+          {order.paymentMethod === 'BANK_TRANSFER' && order.paymentInstructions && (
+            <div className="mt-3 space-y-1">
+              <p>Banco: {order.paymentInstructions.bankName}</p>
+              <p>Titular: {order.paymentInstructions.bankAccountHolder}</p>
+              <p>CLABE o cuenta: {order.paymentInstructions.bankAccountReference}</p>
+              {order.paymentInstructions.bankTransferInstructions && <p>{order.paymentInstructions.bankTransferInstructions}</p>}
+              <p>Comprobante: {order.paymentInstructions.paymentConfirmationPhone}</p>
+              <p className="mt-2 font-medium">El restaurante confirmará tu pago.</p>
+              <p>Yommi no procesa ni recibe este dinero.</p>
+            </div>
+          )}
+        </div>
         {/* Status Timeline */}
         <div className="relative mb-12 mt-8">
           {/* Background line */}

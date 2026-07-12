@@ -298,7 +298,10 @@ export function Home() {
                 </div>
               </div>
               <button
-                onClick={() => navigate(lastOrderId === 'local' || user ? '/last-order' : `/track/${lastOrderId}`)}
+                onClick={() => {
+                  const trackingToken = localStorage.getItem('lastOrderTrackingToken');
+                  navigate(lastOrderId === 'local' || user ? '/last-order' : '/track/' + lastOrderId + (trackingToken ? '?token=' + encodeURIComponent(trackingToken) : ''));
+                }}
                 className="bg-white text-orange-600 hover:bg-orange-50 px-6 py-2.5 rounded-xl font-bold transition-colors shadow-sm whitespace-nowrap"
               >
                 Repetir pedido

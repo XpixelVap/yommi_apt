@@ -20,7 +20,7 @@ const ORDER_TRANSITIONS: Readonly<Record<OrderStatus, readonly OrderStatus[]>> =
   PENDING: ['ACCEPTED', 'CANCELLED'],
   ACCEPTED: ['PREPARING', 'CANCELLED'],
   PREPARING: ['READY', 'CANCELLED'],
-  READY: ['ON_THE_WAY', 'CANCELLED'],
+  READY: ['ON_THE_WAY', 'DELIVERED', 'CANCELLED'], // DELIVERED directly is pickup handoff
   ON_THE_WAY: ['DELIVERED'],
   DELIVERED: [],
   CANCELLED: []
