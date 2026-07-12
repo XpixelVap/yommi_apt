@@ -76,8 +76,8 @@ export function RestaurantDashboard() {
     }
   };
 
-  const activeOrders = orders.filter((o: any) => !['DELIVERED', 'CANCELLED'].includes(o.status));
-  const pastOrders = orders.filter((o: any) => ['DELIVERED', 'CANCELLED'].includes(o.status));
+  const activeOrders = orders.filter((o: any) => !['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(o.status));
+  const pastOrders = orders.filter((o: any) => ['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(o.status));
 
   return (
     <div className="space-y-8">
@@ -172,13 +172,13 @@ export function RestaurantDashboard() {
                     )}
                     {order.status === 'READY' && (
                       <button 
-                        onClick={() => updateOrderStatus(order.id, 'IN_TRANSIT')}
+                        onClick={() => updateOrderStatus(order.id, 'ON_THE_WAY')}
                         className="flex-1 bg-indigo-600 text-white py-2 rounded-xl font-medium hover:bg-indigo-700 transition-colors"
                       >
                         En Camino
                       </button>
                     )}
-                    {order.status === 'IN_TRANSIT' && (
+                    {['ON_THE_WAY', 'IN_TRANSIT'].includes(order.status) && (
                       <button 
                         onClick={() => updateOrderStatus(order.id, 'DELIVERED')}
                         className="flex-1 bg-orange-600 text-white py-2 rounded-xl font-medium hover:bg-orange-700 transition-colors"
@@ -211,8 +211,8 @@ export function RestaurantDashboard() {
                   </div>
                   <div className="text-right">
                     <div className="font-medium">${order.totalAmount.toFixed(2)}</div>
-                    <div className={`text-xs font-medium ${order.status === 'DELIVERED' ? 'text-green-600' : 'text-red-600'}`}>
-                      {order.status === 'DELIVERED' ? 'Completado' : 'Cancelado'}
+                    <div className={`text-xs font-medium ${['DELIVERED', 'COMPLETED'].includes(order.status) ? 'text-green-600' : 'text-red-600'}`}>
+                      {['DELIVERED', 'COMPLETED'].includes(order.status) ? 'Completado' : 'Cancelado'}
                     </div>
                   </div>
                 </div>

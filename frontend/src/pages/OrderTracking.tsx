@@ -69,11 +69,11 @@ export function OrderTracking() {
         <div className="flex items-center justify-between mb-6">
           <span className="text-gray-500">#{order.id.substring(0, 8)}</span>
           <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
-            {order.status === 'PENDING' ? 'Recibido' : 
-             order.status === 'ACCEPTED' ? 'Aceptado' : 
-             order.status === 'PREPARING' ? 'Preparando' : 
-             order.status === 'ON_THE_WAY' ? 'En camino' : 
-             order.status === 'DELIVERED' ? 'Entregado' : order.status}
+            {order.status === 'PENDING' ? 'Recibido' :
+             order.status === 'ACCEPTED' ? 'Aceptado' :
+             order.status === 'PREPARING' ? 'Preparando' :
+             ['ON_THE_WAY', 'IN_TRANSIT'].includes(order.status) ? 'En camino' :
+             ['DELIVERED', 'COMPLETED'].includes(order.status) ? 'Entregado' : order.status}
           </span>
         </div>
 
@@ -81,21 +81,21 @@ export function OrderTracking() {
         <div className="relative mb-12 mt-8">
           {/* Background line */}
           <div className="absolute top-3 left-0 w-full h-1 bg-gray-200 z-0 rounded-full"></div>
-          
+
           {/* Progress line */}
-          <div 
+          <div
             className="absolute top-3 left-0 h-1 bg-orange-500 z-0 rounded-full transition-all duration-500 ease-in-out"
-            style={{ 
+            style={{
               width: `${(() => {
                 const steps = [
                   { matches: ['PENDING', 'ACCEPTED'] },
                   { matches: ['PREPARING', 'READY'] },
-                  { matches: ['ON_THE_WAY'] },
-                  { matches: ['DELIVERED'] }
+                  { matches: ['ON_THE_WAY', 'IN_TRANSIT'] },
+                  { matches: ['DELIVERED', 'COMPLETED'] }
                 ];
                 const currentIndex = steps.findIndex(s => s.matches.includes(order.status));
                 return currentIndex >= 0 ? (currentIndex / (steps.length - 1)) * 100 : 0;
-              })()}%` 
+              })()}%`
             }}
           ></div>
 
@@ -103,26 +103,26 @@ export function OrderTracking() {
             {[
               { key: "received", label: "Pedido recibido", matches: ['PENDING', 'ACCEPTED'] },
               { key: "preparing", label: "En preparación", matches: ['PREPARING', 'READY'] },
-              { key: "on_the_way", label: "En camino", matches: ['ON_THE_WAY'] },
-              { key: "delivered", label: "Entregado", matches: ['DELIVERED'] }
+              { key: "on_the_way", label: "En camino", matches: ['ON_THE_WAY', 'IN_TRANSIT'] },
+              { key: "delivered", label: "Entregado", matches: ['DELIVERED', 'COMPLETED'] }
             ].map((step, index) => {
               const currentIndex = [
                 ['PENDING', 'ACCEPTED'],
                 ['PREPARING', 'READY'],
-                ['ON_THE_WAY'],
-                ['DELIVERED']
+                ['ON_THE_WAY', 'IN_TRANSIT'],
+                ['DELIVERED', 'COMPLETED']
               ].findIndex(matches => matches.includes(order.status));
-              
+
               const isActive = index === currentIndex;
               const isCompleted = index < currentIndex;
               const isFuture = index > currentIndex;
 
               return (
                 <div key={step.key} className="flex flex-col items-center gap-2 w-1/4">
-                  <div 
+                  <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm
-                      ${isCompleted ? 'bg-orange-500 text-white' : 
-                        isActive ? 'bg-white border-4 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.4)]' : 
+                      ${isCompleted ? 'bg-orange-500 text-white' :
+                        isActive ? 'bg-white border-4 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.4)]' :
                         'bg-white border-2 border-gray-200'}`}
                   >
                     {isCompleted && (
@@ -132,7 +132,7 @@ export function OrderTracking() {
                     )}
                     {isActive && <div className="w-2.5 h-2.5 bg-orange-500 rounded-full"></div>}
                   </div>
-                  <span 
+                  <span
                     className={`text-xs sm:text-sm font-medium text-center transition-colors duration-300
                       ${isCompleted || isActive ? 'text-gray-900' : 'text-gray-400'}`}
                   >

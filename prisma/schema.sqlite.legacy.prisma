@@ -1,3 +1,6 @@
+// LEGACY SQLITE SNAPSHOT - DO NOT USE FOR GENERATE, MIGRATIONS OR DEVELOPMENT.
+// Canonical schema: backend/prisma/schema.prisma (PostgreSQL).
+
 generator client {
   provider = "prisma-client-js"
 }

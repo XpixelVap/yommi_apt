@@ -8,3 +8,12 @@ coverage/
 !.env.example
 
 /src/generated/prisma
+
+# Local databases (canonical development database is PostgreSQL)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Generated backend bundle
+backend/server.js

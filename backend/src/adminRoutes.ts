@@ -1,11 +1,17 @@
 import { Router } from 'express';
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { GoogleGenAI, Type } from "@google/genai";
+import { InvalidOrderTransitionError, resolveOrderTransition } from './core/order-status';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_for_dev';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 export const adminRouter = Router();
 
@@ -424,12 +430,25 @@ adminRouter.get('/orders', async (req, res) => {
 });
 
 adminRouter.put('/orders/:id/status', async (req, res) => {
-  const { status } = req.body;
-  const order = await prisma.order.update({
-    where: { id: req.params.id },
-    data: { status }
-  });
-  res.json(order);
+  try {
+    const existingOrder = await prisma.order.findUnique({ where: { id: req.params.id } });
+    if (!existingOrder) return res.status(404).json({ error: 'Order not found' });
+
+    const status = resolveOrderTransition(existingOrder.status, req.body.status);
+    const order = await prisma.order.update({
+      where: { id: req.params.id },
+      data: { status }
+    });
+    await prisma.orderStatusHistory.create({
+      data: { orderId: order.id, status, notes: 'Status updated by platform admin' }
+    });
+    res.json(order);
+  } catch (error) {
+    if (error instanceof InvalidOrderTransitionError) {
+      return res.status(409).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // Users
@@ -480,6 +499,8 @@ adminRouter.delete('/users/:id', async (req, res) => {
   }
 });
 
+// LEGACY/FROZEN: driver management is retained for compatibility only.
+// Do not add new Yommi fleet business rules.
 // Drivers
 adminRouter.get('/drivers', async (req, res) => {
   const drivers = await prisma.deliveryDriver.findMany({

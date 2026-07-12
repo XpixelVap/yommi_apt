@@ -1,3 +1,6 @@
+// CANONICAL YOMMI 2.0 SCHEMA: PostgreSQL only.
+// DeliveryDriver and Commission are legacy/frozen for compatibility.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -102,6 +105,7 @@ model ProductOption {
   updatedAt DateTime @updatedAt
 }
 
+/// LEGACY/FROZEN: retained for existing data and routes; do not add new business rules.
 model DeliveryDriver {
   id        String   @id @default(uuid())
   userId    String   @unique
@@ -173,7 +177,7 @@ model Order {
   restaurant       Restaurant @relation(fields: [restaurantId], references: [id])
   driverId         String?
   driver           DeliveryDriver? @relation(fields: [driverId], references: [id])
-  status           String   @default("PENDING") // PENDING, PREPARING, READY, ON_THE_WAY, DELIVERED, CANCELLED
+  status           String   @default("PENDING") // PENDING, ACCEPTED, PREPARING, READY, ON_THE_WAY, DELIVERED, CANCELLED; legacy: IN_TRANSIT, COMPLETED
   totalAmount      Float
   deliveryAddress  String
   deliveryLat      Float?
@@ -245,6 +249,7 @@ model Rating {
   @@map("ratings")
 }
 
+/// LEGACY/FROZEN: incompatible with the subscription/no-commission model; keep until a reviewed migration removes it.
 model Commission {
   id          String   @id @default(uuid())
   percentage  Float    @default(15.0)

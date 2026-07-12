@@ -18,10 +18,13 @@ export function ClientDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800';
+      case 'ACCEPTED': return 'bg-amber-100 text-amber-800';
       case 'PREPARING': return 'bg-orange-100 text-orange-800';
       case 'READY': return 'bg-blue-100 text-blue-800';
-      case 'ON_THE_WAY': return 'bg-purple-100 text-purple-800';
-      case 'DELIVERED': return 'bg-green-100 text-green-800';
+      case 'ON_THE_WAY':
+      case 'IN_TRANSIT': return 'bg-purple-100 text-purple-800';
+      case 'DELIVERED':
+      case 'COMPLETED': return 'bg-green-100 text-green-800';
       case 'CANCELLED': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -30,10 +33,13 @@ export function ClientDashboard() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'PENDING': return 'Pendiente';
+      case 'ACCEPTED': return 'Aceptado';
       case 'PREPARING': return 'En preparación';
       case 'READY': return 'Listo para recoger';
-      case 'ON_THE_WAY': return 'En camino';
-      case 'DELIVERED': return 'Entregado';
+      case 'ON_THE_WAY':
+      case 'IN_TRANSIT': return 'En camino';
+      case 'DELIVERED':
+      case 'COMPLETED': return 'Entregado';
       case 'CANCELLED': return 'Cancelado';
       default: return status;
     }

@@ -633,6 +633,7 @@ export function AdminDashboard() {
                   className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-sm"
                 >
                   <option value="PENDING">PENDIENTE</option>
+                  <option value="ACCEPTED">ACEPTADO</option>
                   <option value="PREPARING">PREPARANDO</option>
                   <option value="READY">LISTO</option>
                   <option value="ON_THE_WAY">EN CAMINO</option>

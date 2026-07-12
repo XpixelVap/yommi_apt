@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import 'dotenv/config';
 import { prisma } from './db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -11,11 +12,25 @@ import { OAuth2Client } from 'google-auth-library';
 import { GoogleGenAI, Type } from "@google/genai";
 import { adminRouter } from './adminRoutes';
 import rateLimit from 'express-rate-limit';
+import {
+  publicRegistrationRoleSchema,
+  resolvePublicUserRole
+} from './core/public-registration';
+import { calculateOrderPricing, OrderPricingError } from './core/order-pricing';
+import { isOwnedByRestaurant } from './core/ownership';
+import {
+  InvalidOrderTransitionError,
+  resolveOrderTransition
+} from './core/order-status';
 
 const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
 
 export const apiRouter = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_for_dev';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -251,7 +266,7 @@ const registerSchema = z.object({
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
   name: z.string().min(2, "El nombre es muy corto"),
   phone: z.string().optional(),
-  role: z.enum(['CLIENT', 'RESTAURANT', 'DRIVER', 'ADMIN']).optional(),
+  role: publicRegistrationRoleSchema.optional(),
   city: z.string().optional(),
   address: z.string().optional(),
   category: z.string().optional(),
@@ -259,15 +274,13 @@ const registerSchema = z.object({
   owner_name: z.string().optional(),
   has_delivery: z.boolean().optional(),
   has_pickup: z.boolean().optional(),
-  vehicleType: z.string().optional(),
-  licenseNumber: z.string().optional(),
 });
 
 apiRouter.post('/auth/register', authLimiter, async (req, res) => {
   console.log('Register route hit:', req.body);
   try {
     const validatedData = registerSchema.parse(req.body);
-    const { email, password, name, phone, role, city, address, category, instagram, owner_name, vehicleType, licenseNumber, has_delivery, has_pickup } = validatedData;
+    const { email, password, name, phone, role, city, address, category, instagram, owner_name, has_delivery, has_pickup } = validatedData;
     
     let normalizedPhone = phone || '';
     if (phone) {
@@ -283,7 +296,7 @@ apiRouter.post('/auth/register', authLimiter, async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (role === 'RESTAURANT') {
+    if (resolvePublicUserRole(role) === 'RESTAURANT') {
       const restaurant = await prisma.restaurant.create({
         data: { 
           restaurant_name: name,
@@ -317,27 +330,16 @@ apiRouter.post('/auth/register', authLimiter, async (req, res) => {
       return res.json({ message: 'Restaurant registered successfully. Pending verification.' });
     } else {
       const user = await prisma.user.create({
-        data: { email, password_hash: hashedPassword, name, phone: normalizedPhone, role: role || 'CLIENT', provider: 'email' }
+        data: { email, password_hash: hashedPassword, name, phone: normalizedPhone, role: 'CLIENT', provider: 'email' }
       });
 
-      if (role === 'DRIVER') {
-        await prisma.deliveryDriver.create({
-          data: { 
-            userId: user.id,
-            vehicle: vehicleType,
-            plate: licenseNumber,
-            lat: 0,
-            lng: 0
-          }
-        });
-      }
 
       const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
       return res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
     }
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: (error as any).errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     console.error('Register error:', error);
     res.status(500).json({ error: 'Server error: ' + error.message });
@@ -388,7 +390,7 @@ apiRouter.post('/auth/login', authLimiter, async (req, res) => {
     return res.status(400).json({ error: 'Invalid credentials' });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: (error as any).errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(500).json({ error: 'Server error' });
   }
@@ -1059,6 +1061,13 @@ apiRouter.put('/restaurant/categories/:id', authMiddleware, async (req: any, res
   try {
     const restaurantId = getRestaurantId(req);
     if (!restaurantId) return res.status(403).json({ error: 'Forbidden' });
+
+    const ownedCategory = await prisma.category.findUnique({ where: { id: req.params.id } });
+    if (!ownedCategory) return res.status(404).json({ error: 'Category not found' });
+    if (!isOwnedByRestaurant(ownedCategory, restaurantId)) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this category' });
+    }
+
     const category = await prisma.category.update({
       where: { id: req.params.id },
       data: { name: req.body.name }
@@ -1080,7 +1089,7 @@ apiRouter.delete('/restaurant/categories/:id', authMiddleware, async (req: any, 
     const category = await prisma.category.findUnique({ where: { id: req.params.id } });
     if (!category) return res.status(404).json({ error: 'Category not found' });
 
-    if (category.restaurantId !== restaurant.id) {
+    if (!isOwnedByRestaurant(category, restaurant.id)) {
       return res.status(403).json({ error: 'Forbidden: You do not own this category' });
     }
 
@@ -1101,6 +1110,12 @@ apiRouter.post('/restaurant/products', authMiddleware, async (req: any, res) => 
     if (!restaurant) return res.status(404).json({ error: 'Restaurant not found' });
 
     const { categoryId, name, description, price, imageUrl, isAvailable } = req.body;
+    const category = await prisma.category.findUnique({ where: { id: categoryId } });
+    if (!category) return res.status(404).json({ error: 'Category not found' });
+    if (!isOwnedByRestaurant(category, restaurant.id)) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this category' });
+    }
+
     const product = await prisma.product.create({
       data: {
         restaurantId: restaurant.id,
@@ -1123,6 +1138,19 @@ apiRouter.put('/restaurant/products/:id', authMiddleware, async (req: any, res) 
     const restaurantId = getRestaurantId(req);
     if (!restaurantId) return res.status(403).json({ error: 'Forbidden' });
     const { name, description, price, imageUrl, isAvailable, categoryId } = req.body;
+
+    const existingProduct = await prisma.product.findUnique({ where: { id: req.params.id } });
+    if (!existingProduct) return res.status(404).json({ error: 'Product not found' });
+    if (!isOwnedByRestaurant(existingProduct, restaurantId)) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this product' });
+    }
+
+    const category = await prisma.category.findUnique({ where: { id: categoryId } });
+    if (!category) return res.status(404).json({ error: 'Category not found' });
+    if (!isOwnedByRestaurant(category, restaurantId)) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this category' });
+    }
+
     const product = await prisma.product.update({
       where: { id: req.params.id },
       data: {
@@ -1151,7 +1179,7 @@ apiRouter.delete('/restaurant/products/:id', authMiddleware, async (req: any, re
     const product = await prisma.product.findUnique({ where: { id: req.params.id } });
     if (!product) return res.status(404).json({ error: 'Product not found' });
     
-    if (product.restaurantId !== restaurant.id) {
+    if (!isOwnedByRestaurant(product, restaurant.id)) {
       return res.status(403).json({ error: 'Forbidden: You do not own this product' });
     }
 
@@ -1164,9 +1192,31 @@ apiRouter.delete('/restaurant/products/:id', authMiddleware, async (req: any, re
 });
 
 // Orders routes
+const createOrderSchema = z.object({
+  restaurantId: z.string().min(1),
+  items: z.array(z.object({
+    productId: z.string().min(1),
+    quantity: z.number().int().positive(),
+    options: z.array(z.unknown()).optional()
+  })).min(1),
+  deliveryAddress: z.string().min(1),
+  deliveryLat: z.number().optional(),
+  deliveryLng: z.number().optional(),
+  guestName: z.string().optional(),
+  guestPhone: z.string().optional()
+});
+
 apiRouter.post('/orders', optionalAuthMiddleware, async (req: any, res) => {
   try {
-    const { restaurantId, items, totalAmount, deliveryAddress, deliveryLat, deliveryLng, guestName, guestPhone } = req.body;
+    const {
+      restaurantId,
+      items,
+      deliveryAddress,
+      deliveryLat,
+      deliveryLng,
+      guestName,
+      guestPhone
+    } = createOrderSchema.parse(req.body);
     
     if (!req.user && (!guestName || !guestPhone)) {
       return res.status(400).json({ error: 'Guest name and phone are required for unauthenticated orders' });
@@ -1181,20 +1231,27 @@ apiRouter.post('/orders', optionalAuthMiddleware, async (req: any, res) => {
       normalizedGuestPhone = normalizeWhatsApp(guestPhone);
     }
 
+    const productIds = [...new Set(items.map(item => item.productId))];
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, restaurantId: true, price: true, isAvailable: true }
+    });
+
+    const pricing = calculateOrderPricing(restaurantId, items, products);
     const order = await prisma.order.create({
       data: {
         clientId: req.user?.userId || null,
         guestName: req.user ? null : guestName,
         guestPhone: req.user ? null : normalizedGuestPhone,
         restaurantId,
-        totalAmount,
+        totalAmount: pricing.totalAmount,
         deliveryAddress,
         deliveryLat,
         deliveryLng,
         status: 'PENDING',
         trackingToken: Math.random().toString(36).substring(2, 15),
         items: {
-          create: items.map((item: any) => ({
+          create: pricing.items.map(item => ({
             productId: item.productId,
             quantity: item.quantity,
             price: item.price,
@@ -1217,20 +1274,31 @@ apiRouter.post('/orders', optionalAuthMiddleware, async (req: any, res) => {
 
     res.json(order);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.issues[0].message });
+    }
+    if (error instanceof OrderPricingError) {
+      return res.status(400).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Server error' });
   }
 });
 
 apiRouter.get('/orders', authMiddleware, async (req: any, res) => {
   try {
-    let where = {};
-    if (req.user.role === 'CLIENT') where = { clientId: req.user.userId };
-    else if (req.user.role === 'RESTAURANT') {
+    let where;
+    if (req.user.role === 'CLIENT') {
+      where = { clientId: req.user.userId };
+    } else if (req.user.role === 'RESTAURANT') {
       const rest = await prisma.restaurant.findUnique({ where: { id: req.user.userId } });
-      if (rest) where = { restaurantId: rest.id };
+      if (!rest) return res.status(403).json({ error: 'Forbidden' });
+      where = { restaurantId: rest.id };
     } else if (req.user.role === 'DRIVER') {
       const driver = await prisma.deliveryDriver.findUnique({ where: { userId: req.user.userId } });
-      if (driver) where = { driverId: driver.id };
+      if (!driver) return res.status(403).json({ error: 'Forbidden' });
+      where = { driverId: driver.id };
+    } else {
+      return res.status(403).json({ error: 'Forbidden' });
     }
     
     const orders = await prisma.order.findMany({
@@ -1263,12 +1331,6 @@ apiRouter.get('/restaurant/orders', authMiddleware, async (req: any, res) => {
 
 apiRouter.patch('/orders/:id/status', authMiddleware, async (req: any, res) => {
   try {
-    const { status } = req.body;
-    const allowedStatuses = ['PENDING', 'ACCEPTED', 'PREPARING', 'READY', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'];
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
-    }
-
     const orderToUpdate = await prisma.order.findUnique({ where: { id: req.params.id } });
     if (!orderToUpdate) return res.status(404).json({ error: 'Order not found' });
 
@@ -1285,6 +1347,8 @@ apiRouter.patch('/orders/:id/status', authMiddleware, async (req: any, res) => {
     } else {
       return res.status(403).json({ error: 'Forbidden' });
     }
+
+    const status = resolveOrderTransition(orderToUpdate.status, req.body.status);
 
     const order = await prisma.order.update({
       where: { id: req.params.id },
@@ -1323,6 +1387,9 @@ apiRouter.patch('/orders/:id/status', authMiddleware, async (req: any, res) => {
 
     res.json(order);
   } catch (error) {
+    if (error instanceof InvalidOrderTransitionError) {
+      return res.status(409).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Server error' });
   }
 });
