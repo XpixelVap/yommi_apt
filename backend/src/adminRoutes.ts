@@ -5,6 +5,9 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { GoogleGenAI, Type } from "@google/genai";
 import { InvalidOrderTransitionError, resolveOrderTransition } from './core/order-status';
+import { getRestaurantReadiness } from './core/restaurant-readiness';
+import { assertRestaurantReadyForApproval, RestaurantNotReadyError } from './core/restaurant-access';
+import { logRestaurantFunnelEvent } from './core/funnel-events';
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -245,30 +248,41 @@ adminRouter.put('/restaurants/:id/isActive', async (req, res) => {
 adminRouter.patch('/restaurants/:id/approve', async (req, res) => {
   try {
     const restaurantId = req.params.id;
+    const existing = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      include: { categories: { include: { products: true } }, products: true }
+    });
+    if (!existing) return res.status(404).json({ error: 'Restaurant not found' });
+
+    const readiness = getRestaurantReadiness(existing);
+    assertRestaurantReadyForApproval(readiness);
+
     const restaurant = await prisma.restaurant.update({
       where: { id: restaurantId },
       data: { status: 'approved', isActive: true }
     });
-    
-    // Also update the directory status if it exists
+
     const directoryEntry = await prisma.restaurantDirectory.findFirst({
       where: { name: restaurant.restaurant_name }
     });
-    
     if (directoryEntry) {
       await prisma.restaurantDirectory.update({
         where: { id: directoryEntry.id },
         data: { status: 'ACTIVE' }
       });
     }
-    
-    res.json(restaurant);
+    logRestaurantFunnelEvent('restaurant_approved', restaurant.id);
+    res.json({ restaurant, readiness });
   } catch (error) {
-    console.error('Error approving restaurant:', error);
+    if (error instanceof RestaurantNotReadyError) {
+      return res.status(409).json({
+        error: error.message,
+        readiness: error.readiness
+      });
+    }
     res.status(500).json({ error: 'Failed to approve restaurant' });
   }
 });
-
 adminRouter.patch('/restaurants/:id/reject', async (req, res) => {
   try {
     const restaurantId = req.params.id;

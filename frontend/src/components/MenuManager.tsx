@@ -51,7 +51,7 @@ export function MenuManager({ restaurantId }: { restaurantId?: string }) {
       const url = editingCategory ? `${import.meta.env.VITE_API_URL || ""}/api/restaurant/categories/${editingCategory.id}${queryParam}` : `${import.meta.env.VITE_API_URL || ""}/api/restaurant/categories${queryParam}`;
       const method = editingCategory ? 'PUT' : 'POST';
       
-      await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: { 
           'Content-Type': 'application/json',
@@ -59,6 +59,10 @@ export function MenuManager({ restaurantId }: { restaurantId?: string }) {
         },
         body: JSON.stringify({ name })
       });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'No se pudo guardar la categoría');
+      }
       
       setShowCategoryForm(false);
       setEditingCategory(null);
@@ -67,6 +71,7 @@ export function MenuManager({ restaurantId }: { restaurantId?: string }) {
       fetchMenu();
     } catch (error) {
       console.error(error);
+      setToast({ message: error instanceof Error ? error.message : 'No se pudo guardar la categoría', type: 'error' });
     }
   };
 
@@ -138,7 +143,7 @@ export function MenuManager({ restaurantId }: { restaurantId?: string }) {
       const url = editingProduct ? `${import.meta.env.VITE_API_URL || ""}/api/restaurant/products/${editingProduct.id}${queryParam}` : `${import.meta.env.VITE_API_URL || ""}/api/restaurant/products${queryParam}`;
       const method = editingProduct ? 'PUT' : 'POST';
       
-      await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: { 
           'Content-Type': 'application/json',
@@ -146,6 +151,10 @@ export function MenuManager({ restaurantId }: { restaurantId?: string }) {
         },
         body: JSON.stringify(payload)
       });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'No se pudo guardar el producto');
+      }
       
       setShowProductForm(false);
       setEditingProduct(null);
@@ -154,6 +163,7 @@ export function MenuManager({ restaurantId }: { restaurantId?: string }) {
       fetchMenu();
     } catch (error) {
       console.error(error);
+      setToast({ message: error instanceof Error ? error.message : 'No se pudo guardar el producto', type: 'error' });
     }
   };
 
@@ -184,19 +194,31 @@ export function MenuManager({ restaurantId }: { restaurantId?: string }) {
 
   const toggleProductAvailability = async (product: any) => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL || ""}/api/restaurant/products/${product.id}${queryParam}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/restaurant/products/${product.id}${queryParam}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({ ...product, isAvailable: !product.isAvailable })
+        body: JSON.stringify({
+          categoryId: product.categoryId,
+          name: product.name,
+          description: product.description || '',
+          price: product.price,
+          imageUrl: product.imageUrl || product.product_image || '',
+          isAvailable: !product.isAvailable
+        })
       });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'No se pudo cambiar la disponibilidad');
+      }
       clearCache('restaurants_');
       clearCache('popular_');
       fetchMenu();
     } catch (error) {
       console.error(error);
+      setToast({ message: error instanceof Error ? error.message : 'Error al cambiar disponibilidad', type: 'error' });
     }
   };
 

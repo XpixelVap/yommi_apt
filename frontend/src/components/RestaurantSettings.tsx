@@ -20,6 +20,9 @@ export function RestaurantSettings({ restaurantId }: { restaurantId?: string }) 
     city: '',
     cover_image: '',
     logoUrl: '',
+    has_delivery: false,
+    has_pickup: false,
+    deliveryFeeCents: 0,
     opening_hours: {
       monday: '09:00-22:00',
       tuesday: '09:00-22:00',
@@ -46,6 +49,9 @@ export function RestaurantSettings({ restaurantId }: { restaurantId?: string }) 
           city: data.city || '',
           cover_image: data.cover_image || data.coverUrl || '',
           logoUrl: data.logo_url || data.logoUrl || '',
+          has_delivery: Boolean(data.has_delivery),
+          has_pickup: Boolean(data.has_pickup),
+          deliveryFeeCents: Number(data.deliveryFeeCents || 0),
           opening_hours: data.opening_hours ? JSON.parse(data.opening_hours) : {
             monday: '09:00-22:00',
             tuesday: '09:00-22:00',
@@ -221,6 +227,32 @@ export function RestaurantSettings({ restaurantId }: { restaurantId?: string }) 
           </div>
         </div>
 
+        <div>
+          <h3 className="text-lg font-bold mb-4">Modalidades de pedido</h3>
+          <div className="space-y-3">
+            <label className="flex items-center gap-3">
+              <input type="checkbox" checked={formData.has_pickup} onChange={e => setFormData({...formData, has_pickup: e.target.checked})} />
+              <span>Recoger en sucursal</span>
+            </label>
+            <label className="flex items-center gap-3">
+              <input type="checkbox" checked={formData.has_delivery} onChange={e => setFormData({...formData, has_delivery: e.target.checked})} />
+              <span>Entrega por el restaurante</span>
+            </label>
+            {formData.has_delivery && (
+              <div className="max-w-xs">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Costo de entrega</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={(formData.deliveryFeeCents / 100).toFixed(2)}
+                  onChange={e => setFormData({...formData, deliveryFeeCents: Math.max(0, Math.round(Number(e.target.value) * 100))})}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+            )}
+          </div>
+        </div>
         {/* Opening Hours */}
         <div>
           <h3 className="text-lg font-bold mb-4">Horarios de Atención</h3>

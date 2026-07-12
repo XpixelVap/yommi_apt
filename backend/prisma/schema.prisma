@@ -48,6 +48,7 @@ model Restaurant {
   lng             Float?
   has_delivery    Boolean  @default(false)
   has_pickup      Boolean  @default(false)
+  deliveryFeeCents Int      @default(0)
   isActive        Boolean  @default(true)
   opening_hours   String?
   total_orders    Int      @default(0)
@@ -182,6 +183,8 @@ model Order {
   deliveryAddress  String
   deliveryLat      Float?
   deliveryLng      Float?
+  fulfillmentType  String?  // null = LEGACY/UNKNOWN; new orders must persist PICKUP or DELIVERY
+  deliveryFeeCents Int      @default(0)
   trackingToken    String?  @unique
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

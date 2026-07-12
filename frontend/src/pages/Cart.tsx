@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore, useAuthStore } from '../store';
 import { MapPin, CreditCard, Trash2, MessageCircle } from 'lucide-react';
@@ -13,12 +13,27 @@ export function Cart() {
   const [guestPhone, setGuestPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [restaurant, setRestaurant] = useState<any>(null);
+  const [fulfillmentType, setFulfillmentType] = useState<'PICKUP' | 'DELIVERY'>('DELIVERY');
 
-  const total = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const deliveryFee = fulfillmentType === 'DELIVERY' ? Number(restaurant?.deliveryFeeCents || 0) / 100 : 0;
+  const total = subtotal + deliveryFee;
+
+  useEffect(() => {
+    if (!items[0]?.restaurantId) return;
+    fetch(`${import.meta.env.VITE_API_URL || ""}/api/restaurants/${items[0].restaurantId}`)
+      .then(res => res.json())
+      .then(data => {
+        setRestaurant(data);
+        setFulfillmentType(data.has_delivery ? 'DELIVERY' : 'PICKUP');
+      })
+      .catch(() => setError('No se pudo cargar la configuración del restaurante'));
+  }, [items]);
 
   const handleCheckout = async () => {
     setError(null);
-    if (!address) {
+    if (fulfillmentType === 'DELIVERY' && !address) {
       setError('Por favor ingresa una dirección de entrega');
       return;
     }
@@ -49,9 +64,9 @@ export function Cart() {
         headers,
         body: JSON.stringify({
           restaurantId: items[0].restaurantId,
-          items: items.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price })),
-          totalAmount: total,
-          deliveryAddress: address,
+          fulfillmentType,
+          items: items.map(i => ({ productId: i.productId, quantity: i.quantity })),
+          deliveryAddress: fulfillmentType === 'DELIVERY' ? address : undefined,
           deliveryLat: 19.4326, // Mock location
           deliveryLng: -99.1332,
           guestName: user ? undefined : guestName,
@@ -155,18 +170,24 @@ Estoy pidiendo desde Yommi.
         </div>
 
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          {restaurant && (
+            <div className="mb-6">
+              <h2 className="text-xl font-bold mb-3">Modalidad del pedido</h2>
+              <div className="flex gap-3">
+                {restaurant.has_pickup && <button type="button" onClick={() => setFulfillmentType('PICKUP')} className={`px-4 py-2 rounded-xl border ${fulfillmentType === 'PICKUP' ? 'border-orange-600 bg-orange-50 text-orange-700' : 'border-gray-200'}`}>Recoger en sucursal</button>}
+                {restaurant.has_delivery && <button type="button" onClick={() => setFulfillmentType('DELIVERY')} className={`px-4 py-2 rounded-xl border ${fulfillmentType === 'DELIVERY' ? 'border-orange-600 bg-orange-50 text-orange-700' : 'border-gray-200'}`}>Entrega a domicilio</button>}
+              </div>
+            </div>
+          )}
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5 text-orange-600" />
-            Dirección de Entrega
+            {fulfillmentType === 'DELIVERY' ? 'Dirección de Entrega' : 'Recoger en sucursal'}
           </h2>
-          <input
-            type="text"
-            placeholder="Ej. Av. Principal 123, Depto 4B"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all mb-4"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-
+          {fulfillmentType === 'DELIVERY' ? (
+            <input type="text" placeholder="Ej. Av. Principal 123, Depto 4B" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all mb-4" value={address} onChange={(e) => setAddress(e.target.value)} />
+          ) : (
+            <p className="text-sm text-gray-600 mb-4">{restaurant?.address || 'La dirección se confirmará con el restaurante.'}</p>
+          )}
           {!user && (
             <div className="space-y-4 mt-4 border-t border-gray-100 pt-4">
               <h3 className="font-bold text-gray-700">Tus Datos (Invitado)</h3>
@@ -196,15 +217,15 @@ Estoy pidiendo desde Yommi.
           <div className="space-y-3 text-sm mb-6">
             <div className="flex justify-between text-gray-600">
               <span>Subtotal</span>
-              <span>${total.toFixed(2)}</span>
+              <span>${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Costo de envío</span>
-              <span>$2.50</span>
+              <span>${deliveryFee.toFixed(2)}</span>
             </div>
             <div className="border-t border-gray-100 pt-3 flex justify-between font-bold text-lg">
               <span>Total</span>
-              <span>${(total + 2.5).toFixed(2)}</span>
+              <span>${total.toFixed(2)}</span>
             </div>
           </div>
 

@@ -3,6 +3,7 @@ import { useAuthStore } from '../store';
 import { useNavigate } from 'react-router-dom';
 import { DRIVERS_ENABLED } from '../utils';
 import { GoogleLogin } from '@react-oauth/google';
+import { runOptionalUpload } from '../utils/optionalUpload';
 
 export function Register() {
   const [email, setEmail] = useState('');
@@ -52,43 +53,39 @@ export function Register() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al registrarse');
       
-      if (role === 'RESTAURANT' && logo) {
-        // Upload logo if provided
-        const formData = new FormData();
-        formData.append('image', logo);
-        try {
-          const uploadRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/upload/restaurant`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${data.token}` },
-            body: formData
-          });
-          if (uploadRes.ok) {
+      if (role === 'RESTAURANT') {
+        login(data.user, data.token);
+
+        if (logo) {
+          const uploaded = await runOptionalUpload(async () => {
+            const formData = new FormData();
+            formData.append('image', logo);
+            const uploadRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/upload/restaurant`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${data.token}` },
+              body: formData
+            });
+            if (!uploadRes.ok) throw new Error('Logo upload failed');
             const { imageUrl } = await uploadRes.json();
-            // Update the restaurant profile with the logo URL
-            await fetch(`${import.meta.env.VITE_API_URL || ""}/api/restaurant/profile`, {
+            const profileRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/restaurant/profile`, {
               method: 'PUT',
-              headers: { 
+              headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${data.token}` 
+                Authorization: `Bearer ${data.token}`
               },
               body: JSON.stringify({ logoUrl: imageUrl })
             });
-          }
-        } catch (uploadErr) {
-          console.error('Error uploading logo:', uploadErr);
+            if (!profileRes.ok) throw new Error('Logo profile update failed');
+          });
+          if (!uploaded) console.warn('Restaurant registered; optional logo upload failed');
         }
-      }
-      
-      if (role === 'RESTAURANT') {
-        setSuccessMsg("Tu restaurante está pendiente de verificación. Nuestro equipo revisará tu cuenta antes de que sea visible para los clientes.");
-        // Don't auto-login for restaurants, or login but they can't do much
-        setTimeout(() => {
-          navigate('/login');
-        }, 5000);
-      } else {
-        login(data.user, data.token);
+
         navigate('/dashboard');
+        return;
       }
+
+      login(data.user, data.token);
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message);
     }

@@ -11,6 +11,7 @@ export function RestaurantDashboard() {
   const [orders, setOrders] = useState<any[]>([]);
   const [socket, setSocket] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'settings'>('orders');
+  const [readiness, setReadiness] = useState<any>(null);
 
   useEffect(() => {
     if (!user || user.role !== 'RESTAURANT') {
@@ -18,46 +19,53 @@ export function RestaurantDashboard() {
       return;
     }
 
-    fetch(`${import.meta.env.VITE_API_URL || ""}/api/restaurant/orders`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setOrders(data);
-        }
-      })
-      .catch(err => console.error('Error fetching orders:', err));
+    let currentSocket: ReturnType<typeof io> | null = null;
+    let cancelled = false;
 
-    const newSocket = io(import.meta.env.VITE_API_URL || '');
-    setSocket(newSocket);
-
-    newSocket.on('orderStatusUpdated', (data: { orderId: string, status: string }) => {
-      setOrders(prev => prev.map(o => o.id === data.orderId ? { ...o, status: data.status } : o));
-    });
-
-    newSocket.on('newOrder', (order: any) => {
-      if (order.restaurantId === (user as any).restaurantId || (user as any).restaurant?.id === order.restaurantId) {
-        setOrders(prev => [order, ...prev]);
-      } else {
-        // If we don't have restaurantId in user object, we might just fetch again or check
-        fetch(`${import.meta.env.VITE_API_URL || ""}/api/restaurant/orders`, {
+    const loadDashboard = async () => {
+      try {
+        const readinessRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/restaurant/readiness`, {
           headers: { Authorization: `Bearer ${token}` }
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (Array.isArray(data)) setOrders(data);
-          });
-      }
-    });
+        });
+        const readinessData = await readinessRes.json();
+        if (!readinessRes.ok) throw new Error(readinessData.error || 'No se pudo consultar el estado del restaurante');
+        if (cancelled) return;
+        setReadiness(readinessData);
 
-    return () => { 
-      newSocket.off('orderStatusUpdated');
-      newSocket.off('newOrder');
-      newSocket.close(); 
+        if (!readinessData.canReceiveOrders) {
+          setActiveTab('settings');
+          return;
+        }
+
+        const ordersRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/restaurant/orders`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const ordersData = await ordersRes.json();
+        if (ordersRes.ok && Array.isArray(ordersData) && !cancelled) setOrders(ordersData);
+
+        currentSocket = io(import.meta.env.VITE_API_URL || '');
+        setSocket(currentSocket);
+        currentSocket.on('orderStatusUpdated', (data: { orderId: string, status: string }) => {
+          setOrders(prev => prev.map(order => order.id === data.orderId ? { ...order, status: data.status } : order));
+        });
+        currentSocket.on('newOrder', (order: any) => {
+          if (order.restaurantId === user.restaurantId || order.restaurantId === user.id) {
+            setOrders(prev => [order, ...prev]);
+          }
+        });
+      } catch (error) {
+        console.error('Error loading restaurant dashboard:', error);
+      }
+    };
+
+    loadDashboard();
+    return () => {
+      cancelled = true;
+      currentSocket?.off('orderStatusUpdated');
+      currentSocket?.off('newOrder');
+      currentSocket?.close();
     };
   }, [token, user, navigate]);
-
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/orders/${orderId}/status`, {
@@ -81,6 +89,18 @@ export function RestaurantDashboard() {
 
   return (
     <div className="space-y-8">
+      {readiness && !readiness.canReceiveOrders && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+          <div className="flex justify-between gap-4 mb-2">
+            <h2 className="font-bold">Completa tu restaurante para quedar listo</h2>
+            <span className="font-bold text-amber-700">{readiness.percentage}%</span>
+          </div>
+          <ul className="text-sm text-amber-900 list-disc pl-5 space-y-1">
+            {readiness.blockers?.map((blocker: string) => <li key={blocker}>{blocker}</li>)}
+          </ul>
+          <p className="text-sm mt-3">Estado: {readiness.status === 'pending_verification' ? 'Pendiente de aprobación' : readiness.status}</p>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Panel de Restaurante</h1>
         <div className="flex gap-2">

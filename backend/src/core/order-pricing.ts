@@ -1,3 +1,5 @@
+export type FulfillmentType = 'PICKUP' | 'DELIVERY';
+
 export interface OrderItemInput {
   productId: string;
   quantity: number;
@@ -16,6 +18,8 @@ export interface PricedOrderItem extends OrderItemInput {
 }
 
 export interface OrderPricingResult {
+  subtotalAmount: number;
+  deliveryFeeCents: number;
   totalAmount: number;
   items: PricedOrderItem[];
 }
@@ -30,7 +34,9 @@ export class OrderPricingError extends Error {
 export function calculateOrderPricing(
   restaurantId: string,
   items: OrderItemInput[],
-  products: PricedProduct[]
+  products: PricedProduct[],
+  fulfillmentType: FulfillmentType,
+  configuredDeliveryFeeCents: number
 ): OrderPricingResult {
   const requestedProductIds = new Set(items.map(item => item.productId));
   const productById = new Map(products.map(product => [product.id, product]));
@@ -38,12 +44,13 @@ export function calculateOrderPricing(
   if (products.length !== requestedProductIds.size) {
     throw new OrderPricingError('One or more products do not exist');
   }
+  if (!Number.isInteger(configuredDeliveryFeeCents) || configuredDeliveryFeeCents < 0) {
+    throw new OrderPricingError('Restaurant delivery fee configuration is invalid');
+  }
 
   const pricedItems = items.map(item => {
     const product = productById.get(item.productId);
-    if (!product) {
-      throw new OrderPricingError('One or more products do not exist');
-    }
+    if (!product) throw new OrderPricingError('One or more products do not exist');
     if (product.restaurantId !== restaurantId || !product.isAvailable) {
       throw new OrderPricingError(
         'All products must be available and belong to the selected restaurant'
@@ -58,9 +65,11 @@ export function calculateOrderPricing(
     };
   });
 
-  const totalAmount = Math.round(
+  const subtotalAmount = Math.round(
     pricedItems.reduce((total, item) => total + item.price * item.quantity, 0) * 100
   ) / 100;
+  const deliveryFeeCents = fulfillmentType === 'PICKUP' ? 0 : configuredDeliveryFeeCents;
+  const totalAmount = Math.round((subtotalAmount + deliveryFeeCents / 100) * 100) / 100;
 
-  return { totalAmount, items: pricedItems };
+  return { subtotalAmount, deliveryFeeCents, totalAmount, items: pricedItems };
 }

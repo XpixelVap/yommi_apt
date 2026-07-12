@@ -129,3 +129,33 @@ Todos los cambios relevantes de Yommi 2.0 se documentarán en este archivo.
 - Se realizaron comprobaciones estáticas sobre roles públicos, referencias a secretos por defecto, cálculo de totales, precios de items y ownership.
 - Posteriormente se instalaron las dependencias por solicitud expresa y el build completo de frontend y backend finalizó correctamente; véase la sección de verificación de dependencias y compilación.
 - La inconsistencia de `@google/genai` y `google-auth-library` quedó corregida posteriormente durante la instalación y verificación de compilación solicitada.
+## Sprint 3 - Activación segura del restaurante - 2026-07-12
+
+### Acceso, readiness y publicación
+
+- Los restaurantes pendientes reciben sesión válida y pueden acceder únicamente a perfil, menú y estado de readiness; no pueden consultar ni operar pedidos.
+- Se centralizó el readiness con seis requisitos: nombre, contacto, ubicación, horarios, modalidad y menú mínimo disponible.
+- Se agregó `GET /api/restaurant/readiness` con checklist, porcentaje, bloqueadores y capacidad operativa.
+- Las rutas públicas de restaurantes, directorio, slug, id y tendencias filtran por aprobación, actividad y readiness; los perfiles no aptos fallan cerrado.
+- El alta propia crea su entrada de directorio como `PENDING`, evitando exposición indirecta como negocio no reclamado.
+- La aprobación administrativa rechaza con HTTP 409 cualquier restaurante incompleto.
+
+### Registro, menú y funnel
+
+- El registro de restaurante crea la cuenta y sesión antes de intentar el logo; un fallo de imagen no revierte ni oculta el alta terminada.
+- El CRUD de categorías y productos valida payload, precio positivo, disponibilidad y ownership, y propaga errores del backend en la interfaz existente.
+- Se agregaron logs JSON estructurados para registro, primer login, perfil mínimo, primer producto, readiness, aprobación y primer pedido, con clave de deduplicación para el consumidor de logs.
+
+### Pedidos pickup/delivery
+
+- Los pedidos nuevos exigen `PICKUP` o `DELIVERY`; el cliente solo envía producto y cantidad, nunca precio, total ni tarifa.
+- Pickup fuerza tarifa cero. Delivery usa exclusivamente `Restaurant.deliveryFeeCents` y valida que la modalidad esté habilitada.
+- El backend calcula subtotal más tarifa y persiste modalidad y tarifa aplicada.
+- La lectura histórica conserva `fulfillmentType = null` como `LEGACY/UNKNOWN`, sin inferir modalidad.
+
+### Prisma y calidad
+
+- Se creó una migración SQL aditiva no destructiva para `Restaurant.deliveryFeeCents`, `Order.deliveryFeeCents` y `Order.fulfillmentType` nullable.
+- La migración no fue ejecutada y no se modificaron datos históricos.
+- Prisma generate y validate finalizaron correctamente; 9 pruebas pasaron; typecheck y build de frontend/backend pasaron.
+- No se ejecutaron `prisma migrate`, `db push`, migraciones destructivas, cambios de dependencias ni commits.

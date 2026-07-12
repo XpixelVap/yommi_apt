@@ -5,6 +5,9 @@ interface User {
   email: string;
   name: string;
   role: string;
+  restaurantId?: string;
+  status?: string;
+  isActive?: boolean;
 }
 
 interface AuthState {
