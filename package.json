@@ -7,11 +7,18 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces",
+    "validate": "npm run prisma:validate && npm run typecheck && npm test",
     "prisma:generate": "npm run prisma:generate --workspace=backend",
     "prisma:validate": "npm run prisma:validate --workspace=backend",
+    "prisma:migrate:deploy": "npm run prisma:migrate:deploy --workspace=backend",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
     "postinstall": "npm run prisma:generate --workspace=backend"
   },
   "devDependencies": {

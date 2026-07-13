@@ -189,3 +189,33 @@ Todos los cambios relevantes de Yommi 2.0 se documentarán en este archivo.
 - Se creó una migración aditiva con configuración de restaurante y auditoría de pago en pedidos.
 - No se ejecutaron `prisma migrate`, `db push`, migraciones destructivas, reembolsos ni integraciones de pasarela.
 - Se ampliaron pruebas de pricing, métodos, ownership, privacidad, idempotencia, históricos y transiciones.
+## Sprint 5 - Deployment Foundation - 2026-07-12
+
+### Configuración y operación
+
+- Se centralizó la validación backend con Zod; el proceso falla antes de escuchar tráfico si faltan `DATABASE_URL`, `JWT_SECRET`, `API_URL` o configuración productiva obligatoria.
+- Se separaron ejemplos backend/frontend y se documentó que `VITE_*` siempre es información pública.
+- El frontend valida `VITE_API_URL` con Zod durante arranque/build y falla temprano ante configuración inválida.
+- HTTP y Socket.IO comparten una allowlist CORS; localhost se agrega únicamente en desarrollo.
+- Se añadieron `GET /health` para liveness y `GET /ready` para readiness PostgreSQL sin exponer detalles internos.
+
+### Desarrollo y migraciones
+
+- Se añadió PostgreSQL 16 local mediante `docker-compose.yml`, volumen persistente y healthcheck.
+- Se añadieron scripts raíz para desarrollo separado/conjunto, validación, Prisma y operación local de PostgreSQL.
+- Se añadió una migración baseline generada desde el schema Sprint 2 para que bases nuevas puedan aplicar baseline -> Sprint 3 -> Sprint 4.
+- Bases preexistentes requieren adopción manual y revisada del baseline; no se ejecutó `migrate`, `migrate deploy` ni `db push`.
+
+### Storage, Docker y CI
+
+- Los uploads consumen `FileStorage`; el adaptador local usa buffers procesados y queda limitado a desarrollo.
+- Producción rechaza `STORAGE_DRIVER=local` y permanece en `disabled` hasta integrar almacenamiento de objetos.
+- Se añadieron Dockerfiles multi-stage para backend y frontend/Nginx, `.dockerignore` y configuración SPA.
+- Se añadió CI de GitHub para `npm ci`, tests, typecheck, build y Prisma validate/generate, sin deploy ni secretos externos.
+
+### Calidad
+
+- Prisma generate/validate, typecheck, 17 pruebas y build frontend/backend finalizaron correctamente.
+- `docker compose config --quiet` validó el Compose.
+- `/health` respondió 200 y `/ready` 503 de forma cerrada con PostgreSQL deliberadamente inaccesible.
+- Dockerfiles no pudieron comprobarse con `docker build --check` porque Docker Desktop no estaba iniciado; su sintaxis fue revisada y queda pendiente validación con daemon.

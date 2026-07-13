@@ -4,6 +4,7 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { frontendEnv } from './config/env';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -18,7 +19,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id';
+const GOOGLE_CLIENT_ID = frontendEnv.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

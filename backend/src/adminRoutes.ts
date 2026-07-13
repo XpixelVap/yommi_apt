@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -10,13 +9,10 @@ import { assertRestaurantReadyForApproval, RestaurantNotReadyError } from './cor
 import { logRestaurantFunnelEvent } from './core/funnel-events';
 import { PaymentRuleError, assertPaymentCompatibleOrderTransition, paymentStatusForCancellation } from './core/payment-orchestration';
 import { toAdminRestaurantDto, toOrderDto } from './core/payment-dtos';
+import { env } from './config/env';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
-}
+const JWT_SECRET = env.JWT_SECRET;
 
 export const adminRouter = Router();
 
@@ -48,7 +44,7 @@ adminRouter.post('/extract-restaurant', async (req, res) => {
       return res.status(400).json({ error: 'Source text is required' });
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
     
     const systemPrompt = `Eres un asistente que analiza información de restaurantes para la plataforma Yommi.
 OBJETIVO

@@ -17,3 +17,6 @@ coverage/
 
 # Generated backend bundle
 backend/server.js
+
+# Local upload storage
+uploads/

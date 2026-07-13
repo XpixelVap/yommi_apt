@@ -1,12 +1,9 @@
 import { Router } from 'express';
-import 'dotenv/config';
 import { prisma } from './db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import multer from 'multer';
-import fs from 'fs';
-import path from 'path';
 import sharp from 'sharp';
 import { OAuth2Client } from 'google-auth-library';
 import { GoogleGenAI, Type } from "@google/genai";
@@ -40,15 +37,13 @@ import {
   resolvePaymentMethod
 } from './core/payment-orchestration';
 import { toOrderDto, toPublicRestaurantDto, toRestaurantPaymentSettingsDto } from './core/payment-dtos';
+import { env } from './config/env';
+import { fileStorage } from './storage';
 
-const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
 export const apiRouter = Router();
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
-}
+const JWT_SECRET = env.JWT_SECRET;
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -75,46 +70,23 @@ const upload = multer({
 
 const processImage = async (req: any, res: any, next: any) => {
   if (!req.file) return next();
-
-  let dest = 'uploads/';
-  if (req.path.includes('/upload/menu')) {
-    dest = 'uploads/menu/';
-  } else if (req.path.includes('/upload/restaurant/cover')) {
-    dest = 'uploads/restaurants/covers/';
-  } else if (req.path.includes('/upload/restaurant')) {
-    dest = 'uploads/restaurants/';
-  } else if (req.path.includes('/upload/banner')) {
-    dest = 'uploads/banners/';
-  }
-
-  fs.mkdirSync(dest, { recursive: true });
-
-  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  const folder = req.path.includes('/upload/menu') ? 'menu'
+    : req.path.includes('/upload/restaurant/cover') ? 'restaurants/covers'
+    : req.path.includes('/upload/restaurant') ? 'restaurants'
+    : req.path.includes('/upload/banner') ? 'banners' : 'misc';
+  const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
   const filename = `${req.file.fieldname}-${uniqueSuffix}.webp`;
-  const filepath = path.join(dest, filename);
-
   try {
     const image = sharp(req.file.buffer);
     const metadata = await image.metadata();
-    
-    // Resize if the image is too large (e.g., width > 1200px)
-    if (metadata.width && metadata.width > 1200) {
-      image.resize({ width: 1200, withoutEnlargement: true });
-    }
-
-    await image
-      .webp({ quality: 80, effort: 6 }) // effort: 6 for better compression
-      .toFile(filepath);
-    
-    req.file.path = filepath;
-    req.file.filename = filename;
+    if (metadata.width && metadata.width > 1200) image.resize({ width: 1200, withoutEnlargement: true });
+    const data = await image.webp({ quality: 80, effort: 6 }).toBuffer();
+    req.file.stored = await fileStorage.save({ data, folder, filename });
     next();
-  } catch (error) {
-    console.error('Error processing image:', error);
+  } catch {
     res.status(500).json({ error: 'Error processing image' });
   }
 };
-
 // Cache middleware for public data
 const cacheMiddleware = (duration: number) => {
   return (req: any, res: any, next: any) => {
@@ -162,7 +134,7 @@ const phoneSchema = z.string().regex(/^\+?[0-9\s\-\(\)]{10,15}$/, "El número de
 apiRouter.post('/ai-assistant', async (req, res) => {
   try {
     const { query } = req.body;
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
     
     const searchRestaurantsFunction = {
       name: "searchRestaurants",
@@ -229,7 +201,7 @@ apiRouter.post('/ai-assistant', async (req, res) => {
 apiRouter.post('/ai/ask', async (req, res) => {
   try {
     const { query } = req.body;
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
     
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -506,7 +478,7 @@ apiRouter.post('/auth/google', authLimiter, async (req, res) => {
     const { token } = req.body;
     const ticket = await googleClient.verifyIdToken({
       idToken: token,
-      audience: process.env.VITE_GOOGLE_CLIENT_ID,
+      audience: env.GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
     if (!payload || !payload.email) {
@@ -554,32 +526,28 @@ apiRouter.post('/upload/menu', authMiddleware, upload.single('image'), processIm
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  const imageUrl = `${process.env.API_URL || ''}/${req.file.path.replace(/\\/g, '/')}`;
-  res.json({ imageUrl });
+  res.json({ imageUrl: (req.file as any).stored.publicUrl });
 });
 
 apiRouter.post('/upload/restaurant', authMiddleware, upload.single('image'), processImage, (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  const imageUrl = `${process.env.API_URL || ''}/${req.file.path.replace(/\\/g, '/')}`;
-  res.json({ imageUrl });
+  res.json({ imageUrl: (req.file as any).stored.publicUrl });
 });
 
 apiRouter.post('/upload/restaurant/cover', authMiddleware, upload.single('image'), processImage, (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  const imageUrl = `${process.env.API_URL || ''}/${req.file.path.replace(/\\/g, '/')}`;
-  res.json({ imageUrl });
+  res.json({ imageUrl: (req.file as any).stored.publicUrl });
 });
 
 apiRouter.post('/upload/banner', authMiddleware, upload.single('image'), processImage, (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  const imageUrl = `${process.env.API_URL || ''}/${req.file.path.replace(/\\/g, '/')}`;
-  res.json({ imageUrl });
+  res.json({ imageUrl: (req.file as any).stored.publicUrl });
 });
 
 // Middleware to check auth optionally
