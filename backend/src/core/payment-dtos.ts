@@ -1,3 +1,5 @@
+import { getOperationalAvailability } from './restaurant-operational';
+
 const BANK_FIELDS = [
   'bankName', 'bankAccountHolder', 'bankAccountReference',
   'bankTransferInstructions', 'paymentConfirmationPhone'
@@ -18,9 +20,13 @@ export function toPublicRestaurantDto(restaurant: any) {
     bankAccountReference: _reference,
     bankTransferInstructions: _instructions,
     paymentConfirmationPhone: _confirmationPhone,
+    operationalStatusChangedAt: _operationalChangedAt,
+    operationalStatusChangedById: _operationalChangedById,
+    operationalStatusChangedByRole: _operationalChangedByRole,
+    manualOpenUntil: _manualOpenUntil,
     ...safe
   } = restaurant;
-  return safe;
+  return { ...safe, ...getOperationalAvailability(restaurant) };
 }
 
 export function toRestaurantPaymentSettingsDto(restaurant: any, revealReference: boolean) {
@@ -38,12 +44,25 @@ export function toRestaurantPaymentSettingsDto(restaurant: any, revealReference:
   };
 }
 
-export function toOrderDto(order: any, includeTransferDetails = false) {
+export function toOrderDto(order: any, includeTransferDetails = false, includeCustomerContact = false, includeTrackingToken = false) {
   const safe: any = {
     ...order,
     restaurant: toPublicRestaurantDto(order.restaurant)
   };
   for (const field of BANK_FIELDS) delete safe[field];
+  delete safe.cancelledById;
+  delete safe.cancelledByRole;
+  delete safe.paymentConfirmedById;
+  delete safe.paymentConfirmedByRole;
+  delete safe.guestPhone;
+  if (!includeTrackingToken) delete safe.trackingToken;
+  safe.client = order.client ? { id: order.client.id, name: order.client.name } : null;
+  if (includeCustomerContact) {
+    safe.customer = {
+      name: order.client?.name || order.guestName || 'Cliente',
+      phone: order.client?.phone || order.guestPhone || null
+    };
+  }
   if (includeTransferDetails && order.paymentMethod === 'BANK_TRANSFER' && order.restaurant) {
     safe.paymentInstructions = {
       bankName: order.restaurant.bankName ?? null,

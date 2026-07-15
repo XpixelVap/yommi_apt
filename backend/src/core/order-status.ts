@@ -5,7 +5,8 @@ export const ORDER_STATUSES = [
   'READY',
   'ON_THE_WAY',
   'DELIVERED',
-  'CANCELLED'
+  'CANCELLED',
+  'CUSTOMER_NO_SHOW'
 ] as const;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -20,10 +21,11 @@ const ORDER_TRANSITIONS: Readonly<Record<OrderStatus, readonly OrderStatus[]>> =
   PENDING: ['ACCEPTED', 'CANCELLED'],
   ACCEPTED: ['PREPARING', 'CANCELLED'],
   PREPARING: ['READY', 'CANCELLED'],
-  READY: ['ON_THE_WAY', 'DELIVERED', 'CANCELLED'], // DELIVERED directly is pickup handoff
-  ON_THE_WAY: ['DELIVERED'],
+  READY: ['ON_THE_WAY', 'DELIVERED', 'CANCELLED', 'CUSTOMER_NO_SHOW'], // DELIVERED directly is pickup handoff
+  ON_THE_WAY: ['DELIVERED', 'CANCELLED'],
   DELIVERED: [],
-  CANCELLED: []
+  CANCELLED: [],
+  CUSTOMER_NO_SHOW: []
 };
 
 export class InvalidOrderTransitionError extends Error {

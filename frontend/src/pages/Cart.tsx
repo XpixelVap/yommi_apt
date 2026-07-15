@@ -11,6 +11,7 @@ export function Cart() {
   const [address, setAddress] = useState('');
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
+  const [customerNotes, setCustomerNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [restaurant, setRestaurant] = useState<any>(null);
@@ -27,6 +28,7 @@ export function Cart() {
       .then(res => res.json())
       .then(data => {
         setRestaurant(data);
+        if (!data.acceptingOrders) setError(data.message || 'El restaurante no recibe pedidos en este momento.');
         const fulfillment = data.has_delivery ? 'DELIVERY' : 'PICKUP';
         setFulfillmentType(fulfillment);
         setPaymentMethod(fulfillment === 'PICKUP' ? 'PAY_AT_RESTAURANT' : data.acceptsCashOnDelivery ? 'CASH_ON_DELIVERY' : 'BANK_TRANSFER');
@@ -36,6 +38,10 @@ export function Cart() {
 
   const handleCheckout = async () => {
     setError(null);
+    if (restaurant && !restaurant.acceptingOrders) {
+      setError(restaurant.message || 'El restaurante no recibe pedidos en este momento.');
+      return;
+    }
     if (fulfillmentType === 'DELIVERY' && !address) {
       setError('Por favor ingresa una dirección de entrega');
       return;
@@ -74,7 +80,8 @@ export function Cart() {
           deliveryLat: 19.4326, // Mock location
           deliveryLng: -99.1332,
           guestName: user ? undefined : guestName,
-          guestPhone: user ? undefined : guestPhone
+          guestPhone: user ? undefined : guestPhone,
+          customerNotes: customerNotes || undefined
         })
       });
 
@@ -193,6 +200,18 @@ Estoy pidiendo desde Yommi.
           ) : (
             <p className="text-sm text-gray-600 mb-4">{restaurant?.address || 'La dirección se confirmará con el restaurante.'}</p>
           )}
+          <div className="mb-5">
+            <label className="block font-bold mb-2">Instrucciones para el restaurante (opcional)</label>
+            <textarea
+              value={customerNotes}
+              onChange={event => setCustomerNotes(event.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder="Ej. sin cebolla, tocar el timbre al llegar"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
+            />
+            <p className="text-xs text-gray-500 text-right">{customerNotes.length}/500</p>
+          </div>
           <div className="mb-5">
             <h2 className="text-xl font-bold mb-3">Método de pago</h2>
             <div className="space-y-2">

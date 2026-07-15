@@ -57,6 +57,12 @@ model Restaurant {
   bankAccountReference      String?
   bankTransferInstructions  String?
   paymentConfirmationPhone  String?
+  operationalStatus               String   @default("CLOSED")
+  operationalStatusChangedAt      DateTime?
+  operationalStatusChangedById    String?
+  operationalStatusChangedByRole  String?
+  timezone                        String   @default("America/Tijuana")
+  manualOpenUntil                 DateTime?
   isActive        Boolean  @default(true)
   opening_hours   String?
   total_orders    Int      @default(0)
@@ -198,6 +204,15 @@ model Order {
   paymentConfirmedAt     DateTime?
   paymentConfirmedById   String?
   paymentConfirmedByRole String?
+  customerNotes            String?
+  estimatedReadyAt         DateTime?
+  cancelReason             String?
+  cancelledAt              DateTime?
+  cancelledById            String?
+  cancelledByRole          String?
+  cancellationRequestedAt  DateTime?
+  customerNoShowAt         DateTime?
+  customerNoShowNote       String?
   trackingToken    String?  @unique
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

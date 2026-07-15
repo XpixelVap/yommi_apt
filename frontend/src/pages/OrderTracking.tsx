@@ -3,6 +3,15 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store';
 import { io } from 'socket.io-client';
 
+const CANCEL_REASON_LABELS: Record<string, string> = {
+  OUT_OF_STOCK: 'Uno o m?s productos se agotaron.',
+  RESTAURANT_CLOSED: 'El restaurante tuvo que cerrar.',
+  CUSTOMER_REQUEST: 'El cliente solicit? la cancelaci?n.',
+  ADDRESS_OUT_OF_RANGE: 'La direcci?n est? fuera del ?rea de entrega.',
+  DUPLICATE_ORDER: 'El pedido estaba duplicado.',
+  OTHER: 'El restaurante cancel? el pedido.'
+};
+
 export function OrderTracking() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -11,51 +20,50 @@ export function OrderTracking() {
   const [driverLocation, setDriverLocation] = useState<{lat: number, lng: number} | null>(null);
   const [socket, setSocket] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cancellationMessage, setCancellationMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const trackingToken = searchParams.get('token') || localStorage.getItem('lastOrderTrackingToken');
     const query = trackingToken ? `?token=${encodeURIComponent(trackingToken)}` : '';
-    fetch(`${import.meta.env.VITE_API_URL || ""}/api/orders/${id}/tracking${query}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    })
-      .then(async res => {
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Error fetching order');
-        }
-        return res.json();
-      })
-      .then(data => {
-        setOrder(data);
-        if (data.trackingLocations?.length > 0) {
-          setDriverLocation({
-            lat: data.trackingLocations[0].lat,
-            lng: data.trackingLocations[0].lng
-          });
-        }
-      })
-      .catch(err => {
-        setError(err.message);
+    const loadOrder = async () => {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/orders/${id}/tracking${query}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Error al consultar el pedido');
+      setOrder(data);
+      if (data.trackingLocations?.length > 0) {
+        setDriverLocation({ lat: data.trackingLocations[0].lat, lng: data.trackingLocations[0].lng });
+      }
+      setError(null);
+    };
 
+    void loadOrder().catch(err => setError(err.message));
     const newSocket = io(import.meta.env.VITE_API_URL || '');
     setSocket(newSocket);
-
     newSocket.emit('joinOrder', id);
-
-    newSocket.on('locationUpdated', (data) => {
-      setDriverLocation({ lat: data.lat, lng: data.lng });
+    newSocket.on('orderEvent', (event: { orderId: string }) => {
+      if (event.orderId === id) void loadOrder().catch(err => setError(err.message));
     });
-
-    newSocket.on('orderStatusUpdated', (data) => {
-      setOrder((prev: any) => ({ ...prev, status: data.status, paymentStatus: data.paymentStatus ?? prev.paymentStatus }));
-    });
-    newSocket.on('paymentStatusUpdated', (data) => {
-      setOrder((prev: any) => ({ ...prev, paymentStatus: data.paymentStatus }));
-    });
-
-    return () => { newSocket.close(); };
+    return () => { newSocket.removeAllListeners(); newSocket.close(); };
   }, [id, searchParams, token]);
+
+  const requestCancellation = async () => {
+    try {
+      const trackingToken = searchParams.get('token') || localStorage.getItem('lastOrderTrackingToken');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/orders/${id}/cancellation-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify(token ? {} : { trackingToken })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'No se pudo solicitar la cancelaci?n');
+      setOrder(data);
+      setCancellationMessage('Solicitud enviada al restaurante.');
+    } catch (requestError) {
+      setCancellationMessage(requestError instanceof Error ? requestError.message : 'No se pudo solicitar la cancelaci?n');
+    }
+  };
 
   if (error) {
     return (
@@ -83,7 +91,9 @@ export function OrderTracking() {
              order.status === 'ACCEPTED' ? 'Aceptado' :
              order.status === 'PREPARING' ? 'Preparando' :
              ['ON_THE_WAY', 'IN_TRANSIT'].includes(order.status) ? 'En camino' :
-             ['DELIVERED', 'COMPLETED'].includes(order.status) ? 'Entregado' : order.status}
+             ['DELIVERED', 'COMPLETED'].includes(order.status) ? 'Entregado' :
+             order.status === 'CUSTOMER_NO_SHOW' ? 'Cliente no se present?' :
+             order.status === 'CANCELLED' ? 'Cancelado' : order.status}
           </span>
         </div>
 
@@ -101,6 +111,20 @@ export function OrderTracking() {
             </div>
           )}
         </div>
+        {order.estimatedReadyAt && (
+          <div className="mb-4 bg-blue-50 border border-blue-200 p-3 rounded-xl text-sm">
+            Tiempo estimado: <strong>{new Date(order.estimatedReadyAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
+          </div>
+        )}
+        {order.customerNotes && <div className="mb-4 bg-yellow-50 border border-yellow-200 p-3 rounded-xl text-sm"><strong>Notas:</strong> {order.customerNotes}</div>}
+        {order.status === 'CANCELLED' && <div className="mb-4 bg-red-50 border border-red-200 p-3 rounded-xl text-sm"><strong>Motivo:</strong> {CANCEL_REASON_LABELS[order.cancelReason] || 'El pedido fue cancelado.'}</div>}
+        {order.status === 'CUSTOMER_NO_SHOW' && <div className="mb-4 bg-gray-100 border border-gray-200 p-3 rounded-xl text-sm">El restaurante registr? que el cliente no se present?.</div>}
+        {order.status === 'PENDING' && !order.cancellationRequestedAt && (
+          <button onClick={requestCancellation} className="mb-4 px-4 py-2 rounded-xl bg-red-100 text-red-700 font-medium">Solicitar cancelaci?n</button>
+        )}
+        {order.cancellationRequestedAt && <div className="mb-4 text-sm text-amber-800 bg-amber-50 p-3 rounded-xl">Cancelaci?n solicitada; el restaurante debe confirmarla.</div>}
+        {cancellationMessage && <div className="mb-4 text-sm text-blue-800">{cancellationMessage}</div>}
+
         {/* Status Timeline */}
         <div className="relative mb-12 mt-8">
           {/* Background line */}

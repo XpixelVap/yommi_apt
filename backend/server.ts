@@ -76,8 +76,6 @@ async function startServer() {
 
   io.on('connection', socket => {
     socket.on('joinOrder', orderId => socket.join(`order_${orderId}`));
-    socket.on('updateLocation', data => io.to(`order_${data.orderId}`).emit('locationUpdated', data));
-    socket.on('updateOrderStatus', data => io.to(`order_${data.orderId}`).emit('orderStatusUpdated', data));
   });
 
   app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {

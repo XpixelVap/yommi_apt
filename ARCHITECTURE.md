@@ -736,3 +736,14 @@ Reglas arquitectónicas:
 - El adaptador temporal para clientes antiguos resuelve ausencia de método de forma determinista: pickup usa pago en restaurante; delivery prefiere el flujo histórico de efectivo. Debe retirarse tras sincronizar despliegues.
 
 Este contexto no introduce SDKs de pasarela, webhooks financieros, ledger, conciliación ni dependencias externas.
+## Controles operativos del restaurante y atención de pedidos
+
+El contexto `restaurants` expone una única política efectiva de recepción de pedidos. Estar aprobado, activo y listo no basta: el negocio debe estar en `OPEN` y dentro de su horario regular o de una apertura manual vigente. `PAUSED` y `CLOSED` fallan cerrado. Los horarios se interpretan en una zona IANA por restaurante, soportan continuidad después de medianoche y nunca dependen del reloj del navegador.
+
+`manualOpenUntil` es una excepción acotada: solo puede persistirse junto con OPEN, en el futuro y con máximo 24 horas. Al vencer, no muta el estado persistido; simplemente deja de contribuir al cálculo efectivo. Toda escritura de estado guarda actor, rol y timestamp.
+
+Las rutas públicas pueden mostrar un restaurante operativo o temporalmente cerrado, pero el servicio de creación de pedidos siempre recalcula la disponibilidad en backend antes de escribir. El rollout inicial de `operationalStatus DEFAULT CLOSED` requiere migración, backend y frontend coordinados; no se autoriza un backfill automático a OPEN.
+
+Los eventos de pedido son avisos de invalidación, no entidades serializadas ni comandos. Su contrato contiene exclusivamente `orderId`, `restaurantId` y `type`; cada consumidor obtiene el detalle desde una ruta autenticada y con ownership. Datos personales, notas, dirección, pago y banco no pertenecen al transporte Socket.IO.
+
+La cancelación normal se ejecuta mediante un único servicio transaccional compartido por restaurante y administración. Ese servicio aplica transición, política de pago, motivo canónico, auditoría, historial y evento idempotente. CANCELLED y CUSTOMER_NO_SHOW son terminales y no actualizan contadores de ventas; solo DELIVERED confirmado como PAID representa una venta completada. Un invitado únicamente puede solicitar cancelación PENDING con su tracking token comparado de forma segura.

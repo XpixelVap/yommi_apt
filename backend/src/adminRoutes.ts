@@ -1,15 +1,19 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
+import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { GoogleGenAI, Type } from "@google/genai";
-import { InvalidOrderTransitionError, resolveOrderTransition } from './core/order-status';
+import { InvalidOrderTransitionError, ORDER_STATUSES, resolveOrderTransition } from './core/order-status';
 import { getRestaurantReadiness } from './core/restaurant-readiness';
 import { assertRestaurantReadyForApproval, RestaurantNotReadyError } from './core/restaurant-access';
 import { logRestaurantFunnelEvent } from './core/funnel-events';
-import { PaymentRuleError, assertPaymentCompatibleOrderTransition, paymentStatusForCancellation } from './core/payment-orchestration';
+import { PaymentRuleError, assertPaymentCompatibleOrderTransition } from './core/payment-orchestration';
 import { toAdminRestaurantDto, toOrderDto } from './core/payment-dtos';
 import { env } from './config/env';
+import { emitSafeOrderEvent } from './core/order-events';
+import { CANCELLATION_REASONS, OrderOperationError, cancelOrder } from './core/order-operations';
+import { OPERATIONAL_STATUSES, OperationalRuleError, getOperationalAvailability, updateOperationalStatus } from './core/restaurant-operational';
 
 const prisma = new PrismaClient();
 const JWT_SECRET = env.JWT_SECRET;
@@ -432,34 +436,87 @@ adminRouter.put('/claims/:id/status', async (req, res) => {
   res.json(claim);
 });
 
+const adminOperationalStatusSchema = z.object({
+  status: z.enum(OPERATIONAL_STATUSES),
+  manualOpenUntil: z.string().datetime().nullable().optional()
+}).strict();
+
+adminRouter.patch('/restaurants/:id/operational-status', async (req: any, res) => {
+  try {
+    const input = adminOperationalStatusSchema.parse(req.body);
+    const restaurant = await updateOperationalStatus({
+      prisma,
+      restaurantId: req.params.id,
+      actor: { id: req.user.id, role: 'ADMIN' },
+      status: input.status,
+      manualOpenUntil: input.manualOpenUntil ? new Date(input.manualOpenUntil) : null
+    });
+    res.json({ ...getOperationalAvailability(restaurant), manualOpenUntil: restaurant.manualOpenUntil });
+  } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues[0].message });
+    if (error instanceof OperationalRuleError) return res.status(409).json({ code: error.code, error: error.message });
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Orders
 adminRouter.get('/orders', async (req, res) => {
   const orders = await prisma.order.findMany({
     include: { restaurant: true, client: true },
     orderBy: { createdAt: 'desc' }
   });
-  res.json(orders.map(order => toOrderDto(order, false)));
+  res.json(orders.map(order => toOrderDto(order, false, true)));
 });
 
-adminRouter.put('/orders/:id/status', async (req, res) => {
+const adminOrderStatusSchema = z.object({
+  status: z.enum(ORDER_STATUSES),
+  estimatedMinutes: z.number().int().min(5).max(180).optional(),
+  cancelReason: z.enum(CANCELLATION_REASONS).optional()
+}).strict();
+
+adminRouter.put('/orders/:id/status', async (req: any, res) => {
   try {
+    const input = adminOrderStatusSchema.parse(req.body);
     const existingOrder = await prisma.order.findUnique({ where: { id: req.params.id } });
     if (!existingOrder) return res.status(404).json({ error: 'Order not found' });
+    if (input.status === 'CANCELLED') {
+      if (!input.cancelReason) return res.status(400).json({ code: 'INVALID_CANCELLATION_REASON', error: 'Selecciona un motivo de cancelaci?n.' });
+      const result = await cancelOrder({
+        prisma,
+        io: req.app.get('io'),
+        orderId: existingOrder.id,
+        actor: { id: req.user.id, role: 'ADMIN' },
+        reason: input.cancelReason
+      });
+      return res.json(toOrderDto(result.order, false, true));
+    }
+    if (input.status === 'ACCEPTED' && input.estimatedMinutes === undefined) {
+      return res.status(400).json({ code: 'INVALID_ESTIMATED_TIME', error: 'Selecciona un tiempo estimado entre 5 y 180 minutos.' });
+    }
 
-    const status = resolveOrderTransition(existingOrder.status, req.body.status);
+    const status = resolveOrderTransition(existingOrder.status, input.status);
     assertPaymentCompatibleOrderTransition(existingOrder.paymentMethod, existingOrder.paymentStatus, status);
-    const paymentStatus = status === 'CANCELLED'
-      ? paymentStatusForCancellation(existingOrder.paymentStatus)
-      : existingOrder.paymentStatus;
-    const order = await prisma.order.update({
-      where: { id: req.params.id },
-      data: { status, paymentStatus }
+    const estimatedReadyAt = status === 'ACCEPTED'
+      ? new Date(Date.now() + input.estimatedMinutes! * 60 * 1000)
+      : undefined;
+    const order = await prisma.$transaction(async tx => {
+      const updated = await tx.order.update({
+        where: { id: existingOrder.id },
+        data: { status, ...(estimatedReadyAt ? { estimatedReadyAt } : {}) }
+      });
+      await tx.orderStatusHistory.create({
+        data: { orderId: updated.id, status, notes: 'Status updated by platform admin' }
+      });
+      return updated;
     });
-    await prisma.orderStatusHistory.create({
-      data: { orderId: order.id, status, notes: 'Status updated by platform admin' }
-    });
-    res.json(toOrderDto(order, false));
+    emitSafeOrderEvent(req.app.get('io'), 'ORDER_UPDATED', order);
+    res.json(toOrderDto(order, false, true));
   } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues[0].message });
+    if (error instanceof OrderOperationError) {
+      const status = error.code === 'ORDER_NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 409;
+      return res.status(status).json({ code: error.code, error: error.message });
+    }
     if (error instanceof InvalidOrderTransitionError || error instanceof PaymentRuleError) {
       return res.status(409).json({ error: error.message });
     }

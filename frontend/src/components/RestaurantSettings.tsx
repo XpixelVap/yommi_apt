@@ -31,6 +31,7 @@ export function RestaurantSettings({ restaurantId }: { restaurantId?: string }) 
     bankAccountReference: '',
     bankTransferInstructions: '',
     paymentConfirmationPhone: '',
+    timezone: 'America/Tijuana',
     opening_hours: {
       monday: '09:00-22:00',
       tuesday: '09:00-22:00',
@@ -68,6 +69,7 @@ export function RestaurantSettings({ restaurantId }: { restaurantId?: string }) 
           bankAccountReference: data.bankAccountReference || '',
           bankTransferInstructions: data.bankTransferInstructions || '',
           paymentConfirmationPhone: data.paymentConfirmationPhone || '',
+          timezone: data.timezone || 'America/Tijuana',
           opening_hours: data.opening_hours ? JSON.parse(data.opening_hours) : {
             monday: '09:00-22:00',
             tuesday: '09:00-22:00',
@@ -295,6 +297,15 @@ export function RestaurantSettings({ restaurantId }: { restaurantId?: string }) 
         {/* Opening Hours */}
         <div>
           <h3 className="text-lg font-bold mb-4">Horarios de Atención</h3>
+          <label className="block text-sm font-medium text-gray-700 mb-4">
+            Zona horaria
+            <select value={formData.timezone} onChange={event => setFormData({ ...formData, timezone: event.target.value })} className="mt-1 block w-full max-w-sm px-4 py-2 rounded-xl border border-gray-200">
+              <option value="America/Tijuana">Tijuana</option>
+              <option value="America/Mexico_City">Ciudad de M?xico</option>
+              <option value="America/Cancun">Canc?n</option>
+            </select>
+          </label>
+          <p className="text-xs text-gray-500 mb-4">Los horarios nocturnos pueden cruzar medianoche, por ejemplo 18:00-02:00.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {Object.entries(formData.opening_hours).map(([day, hours]) => (
               <div key={day} className="flex items-center gap-4">

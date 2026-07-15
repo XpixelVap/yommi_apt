@@ -1,5 +1,42 @@
 # Changelog
 
+
+## Sprint 6 - Controles operativos para piloto - 2026-07-12
+
+### Apertura y horarios
+
+- Se centralizaron los estados `OPEN`, `PAUSED` y `CLOSED`, con auditoría de actor y timestamp.
+- La recepción de pedidos exige aprobación, activación, readiness, estado OPEN y horario regular o apertura manual vigente.
+- Los horarios soportan rangos nocturnos como `18:00-02:00`, días cerrados y zonas IANA; el default es `America/Tijuana`.
+- La apertura manual solo funciona con OPEN, debe vencer dentro de las siguientes 24 horas y no altera el estado al expirar.
+- El dashboard permite abrir por horario, abrir temporalmente, pausar y cerrar; las vistas públicas muestran el estado efectivo y el backend bloquea pedidos fuera de operación.
+
+### Pedidos y atención
+
+- Se añadieron notas del cliente, contacto autorizado y estimado obligatorio al aceptar.
+- Se creó una cancelación transaccional compartida por restaurante y administración con motivo, actor, fecha, historial, idempotencia y evento seguro.
+- La solicitud de cancelación invitada requiere tracking token seguro y pedido PENDING; el UUID no autoriza.
+- `CUSTOMER_NO_SHOW` es terminal para pickup READY y, al igual que CANCELLED, no incrementa ventas.
+- Los tracking tokens se ocultan de listados y respuestas posteriores; solo se entregan al crear el pedido invitado.
+
+### Alertas y privacidad
+
+- Socket.IO dejó de aceptar comandos de estado o ubicación y emite únicamente `orderId`, `restaurantId` y `type`.
+- El dashboard obtiene el detalle mediante endpoint autorizado, alerta mientras existan pedidos PENDING y resincroniza al reconectar.
+- Los eventos no contienen datos personales, dirección, notas, pago ni información bancaria.
+
+### Prisma y despliegue
+
+- Se preparó la migración aditiva `20260712000300_sprint_6_operational_controls`; no fue ejecutada.
+- `operationalStatus` usa default CLOSED: todos los restaurantes existentes quedarán cerrados al aplicar la migración.
+- No debe aplicarse en producción hasta confirmar el control de apertura y coordinar backend/frontend. No se realizará backfill automático a OPEN.
+
+### Calidad
+
+- 28/28 pruebas aprobadas, typecheck y build correctos en ambos workspaces.
+- Prisma validate y generate correctos contra el schema PostgreSQL canónico.
+- No se ejecutó migrate, migrate deploy ni db push; no se hizo commit.
+
 Todos los cambios relevantes de Yommi 2.0 se documentarán en este archivo.
 
 ## Sprint 2 - Consolidación del núcleo técnico - 2026-07-11

@@ -158,7 +158,9 @@ export function Home() {
   const popularRestaurants = filteredRestaurants.slice(0, 6);
 
   const RestaurantCard = ({ restaurant }: { restaurant: any }) => {
-    const status = getRestaurantStatus(restaurant.opening_hours);
+    const status = restaurant.code
+      ? { isOpen: restaurant.acceptingOrders, text: restaurant.message }
+      : getRestaurantStatus(restaurant.opening_hours);
     const isTrending = trendingRestaurants.some(tr => tr.id === restaurant.id);
     const responseScore = getResponseScore(restaurant.id) + (restaurant.response_score || 0);
     const isFastResponse = responseScore > 5;

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from './db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import multer from 'multer';
 import sharp from 'sharp';
@@ -17,6 +18,7 @@ import { calculateOrderPricing, OrderPricingError } from './core/order-pricing';
 import { isOwnedByRestaurant } from './core/ownership';
 import {
   InvalidOrderTransitionError,
+  ORDER_STATUSES,
   resolveOrderTransition
 } from './core/order-status';
 import {
@@ -37,6 +39,25 @@ import {
   resolvePaymentMethod
 } from './core/payment-orchestration';
 import { toOrderDto, toPublicRestaurantDto, toRestaurantPaymentSettingsDto } from './core/payment-dtos';
+import { emitSafeOrderEvent } from './core/order-events';
+import {
+  CANCELLATION_REASONS,
+  OrderOperationError,
+  cancelOrder,
+  estimatedReadyAtFromMinutes,
+  markCustomerNoShow,
+  normalizeCustomerNotes,
+  requestOrderCancellation,
+  secureTokenEquals
+} from './core/order-operations';
+import {
+  OPERATIONAL_STATUSES,
+  OperationalRuleError,
+  getOperationalAvailability,
+  isValidOpeningHours,
+  isValidTimezone,
+  updateOperationalStatus
+} from './core/restaurant-operational';
 import { env } from './config/env';
 import { fileStorage } from './storage';
 
@@ -263,7 +284,8 @@ function toRestaurantSessionUser(restaurant: any) {
     name: restaurant.restaurant_name,
     role: 'RESTAURANT',
     status: restaurant.status,
-    isActive: restaurant.isActive
+    isActive: restaurant.isActive,
+    operationalStatus: restaurant.operationalStatus
   };
 }
 
@@ -286,6 +308,9 @@ function toRestaurantProfile(restaurant: any, revealBankReference = false) {
     has_pickup: restaurant.has_pickup,
     deliveryFeeCents: restaurant.deliveryFeeCents,
     opening_hours: restaurant.opening_hours,
+    timezone: restaurant.timezone,
+    operationalStatus: restaurant.operationalStatus,
+    manualOpenUntil: restaurant.manualOpenUntil,
     status: restaurant.status,
     isActive: restaurant.isActive,
     ...toRestaurantPaymentSettingsDto(restaurant, revealBankReference)
@@ -893,13 +918,19 @@ apiRouter.get('/restaurants/trending', async (req, res) => {
         total_orders: true,
         orders_today: true,
         rating_score: true,
-        rating_count: true
+        rating_count: true,
+        status: true,
+        isActive: true,
+        operationalStatus: true,
+        opening_hours: true,
+        timezone: true,
+        manualOpenUntil: true
       }
     });
 
     const trending = restaurants.map(r => {
       const score = (r.orders_today * 0.7) + (r.total_orders * 0.2) + (r.rating_score * r.rating_count * 0.1);
-      return { ...r, trendingScore: score };
+      return { ...toPublicRestaurantDto(r), trendingScore: score };
     })
     .sort((a, b) => b.trendingScore - a.trendingScore)
     .slice(0, 10);
@@ -1057,7 +1088,8 @@ const restaurantProfileSchema = z.object({
   city: z.string().optional(),
   cover_image: z.string().optional(),
   logoUrl: z.string().optional(),
-  opening_hours: z.string().optional(),
+  opening_hours: z.string().refine(isValidOpeningHours, 'Usa horarios HH:mm-HH:mm o CERRADO para cada d?a.').optional(),
+  timezone: z.string().refine(isValidTimezone, 'La zona horaria no es v?lida.').optional(),
   has_delivery: z.boolean().optional(),
   has_pickup: z.boolean().optional(),
   deliveryFeeCents: z.number().int().nonnegative().optional(),
@@ -1100,12 +1132,59 @@ apiRouter.get('/restaurant/readiness', authMiddleware, async (req: any, res) => 
   const result = await loadRestaurantWithReadiness(restaurantId);
   if (!result) return res.status(404).json({ error: 'Restaurant not found' });
   if (!canConfigureRestaurant(result.restaurant)) return res.status(403).json({ error: 'Forbidden' });
+  const availability = getOperationalAvailability(result.restaurant);
+  const canManageOrders = canOperateRestaurant(result.restaurant, result.readiness);
   res.json({
     ...result.readiness,
     status: result.restaurant.status,
     isActive: result.restaurant.isActive,
-    canReceiveOrders: canOperateRestaurant(result.restaurant, result.readiness)
+    canManageOrders,
+    canReceiveOrders: canManageOrders && availability.acceptingOrders,
+    availability
   });
+});
+
+const operationalStatusSchema = z.object({
+  status: z.enum(OPERATIONAL_STATUSES),
+  manualOpenUntil: z.string().datetime().nullable().optional()
+}).strict();
+
+apiRouter.get('/restaurant/operational-status', authMiddleware, async (req: any, res) => {
+  const restaurantId = getRestaurantId(req);
+  if (!restaurantId) return res.status(403).json({ error: 'Forbidden' });
+  const restaurant = await prisma.restaurant.findUnique({ where: { id: restaurantId } });
+  if (!restaurant) return res.status(404).json({ error: 'Restaurant not found' });
+  if (!canConfigureRestaurant(restaurant)) return res.status(403).json({ error: 'Forbidden' });
+  res.json({
+    ...getOperationalAvailability(restaurant),
+    manualOpenUntil: restaurant.manualOpenUntil,
+    changedAt: restaurant.operationalStatusChangedAt,
+    changedByRole: restaurant.operationalStatusChangedByRole
+  });
+});
+
+apiRouter.patch('/restaurant/operational-status', authMiddleware, async (req: any, res) => {
+  try {
+    if (req.user.role !== 'RESTAURANT') return res.status(403).json({ error: 'Forbidden' });
+    const data = operationalStatusSchema.parse(req.body);
+    const restaurant = await updateOperationalStatus({
+      prisma,
+      restaurantId: req.user.userId,
+      actor: { id: req.user.userId, role: req.user.role },
+      status: data.status,
+      manualOpenUntil: data.manualOpenUntil ? new Date(data.manualOpenUntil) : null
+    });
+    res.json({
+      ...getOperationalAvailability(restaurant),
+      manualOpenUntil: restaurant.manualOpenUntil,
+      changedAt: restaurant.operationalStatusChangedAt,
+      changedByRole: restaurant.operationalStatusChangedByRole
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ code: 'INVALID_OPERATIONAL_STATE', error: error.issues[0].message });
+    if (error instanceof OperationalRuleError) return res.status(409).json({ code: error.code, error: error.message });
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 apiRouter.put('/restaurant/profile', authMiddleware, async (req: any, res) => {
@@ -1144,6 +1223,7 @@ apiRouter.put('/restaurant/profile', authMiddleware, async (req: any, res) => {
         coverUrl: data.cover_image,
         logo_url: data.logoUrl,
         opening_hours: data.opening_hours,
+        timezone: data.timezone,
         has_delivery: data.has_delivery,
         has_pickup: data.has_pickup,
         deliveryFeeCents: data.deliveryFeeCents,
@@ -1279,7 +1359,7 @@ apiRouter.delete('/restaurant/products/:id', authMiddleware, async (req: any, re
   res.json({ success: true });
 });
 // Orders routes
-const createOrderSchema = z.object({
+export const createOrderSchema = z.object({
   restaurantId: z.string().min(1),
   fulfillmentType: z.enum(['PICKUP', 'DELIVERY']),
   paymentMethod: z.enum(PAYMENT_METHODS).optional(),
@@ -1292,7 +1372,8 @@ const createOrderSchema = z.object({
   deliveryLat: z.number().optional(),
   deliveryLng: z.number().optional(),
   guestName: z.string().optional(),
-  guestPhone: z.string().optional()
+  guestPhone: z.string().optional(),
+  customerNotes: z.string().trim().max(500, 'Las notas no pueden exceder 500 caracteres.').optional()
 }).strict();
 
 apiRouter.post('/orders', optionalAuthMiddleware, async (req: any, res) => {
@@ -1314,6 +1395,10 @@ apiRouter.post('/orders', optionalAuthMiddleware, async (req: any, res) => {
       return res.status(404).json({ error: 'Restaurant not found or not accepting orders' });
     }
     const restaurant = restaurantResult.restaurant;
+    const availability = getOperationalAvailability(restaurant);
+    if (!availability.acceptingOrders) {
+      return res.status(409).json({ code: availability.code, error: availability.message });
+    }
     const paymentMethod = resolvePaymentMethod(
       input.fulfillmentType, input.paymentMethod, restaurant
     );
@@ -1358,7 +1443,8 @@ apiRouter.post('/orders', optionalAuthMiddleware, async (req: any, res) => {
         deliveryLat: input.fulfillmentType === 'DELIVERY' ? input.deliveryLat : restaurant.lat,
         deliveryLng: input.fulfillmentType === 'DELIVERY' ? input.deliveryLng : restaurant.lng,
         status: 'PENDING',
-        trackingToken: Math.random().toString(36).substring(2, 15),
+        trackingToken: randomBytes(32).toString('hex'),
+        customerNotes: normalizeCustomerNotes(input.customerNotes),
         items: {
           create: pricing.items.map(item => ({
             productId: item.productId,
@@ -1374,12 +1460,14 @@ apiRouter.post('/orders', optionalAuthMiddleware, async (req: any, res) => {
 
     logRestaurantFunnelEvent('restaurant_first_order_received', order.restaurantId, { orderId: order.id });
     const io = req.app.get('io');
-    const safeOrder = toOrderDto(order, true);
-    if (io) io.emit('newOrder', toOrderDto(order, false));
+    const safeOrder = toOrderDto(order, true, false, true);
+    emitSafeOrderEvent(io, 'ORDER_CREATED', order);
     res.status(201).json(safeOrder);
   } catch (error) {
     if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues[0].message });
-    if (error instanceof OrderPricingError || error instanceof PaymentRuleError) return res.status(400).json({ error: error.message });
+    if (error instanceof OrderPricingError || error instanceof PaymentRuleError || error instanceof OrderOperationError) {
+      return res.status(400).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -1425,13 +1513,24 @@ apiRouter.get('/restaurant/orders', authMiddleware, async (req: any, res) => {
 
     const orders = await prisma.order.findMany({
       where: { restaurantId: restaurant.id },
-      include: { items: { include: { product: true } }, client: true, driver: true },
+      include: { restaurant: true, items: { include: { product: true } }, client: true, driver: true },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(orders.map(order => toOrderDto(order, req.user.role === 'CLIENT')));
+    res.json(orders.map(order => toOrderDto(order, false, true)));
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+apiRouter.get('/restaurant/orders/:id', authMiddleware, async (req: any, res) => {
+  if (req.user.role !== 'RESTAURANT') return res.status(403).json({ error: 'Forbidden' });
+  const order = await prisma.order.findUnique({
+    where: { id: req.params.id },
+    include: { restaurant: true, items: { include: { product: true } }, client: true, driver: true }
+  });
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+  if (order.restaurantId !== req.user.userId) return res.status(403).json({ error: 'Forbidden' });
+  res.json(toOrderDto(order, false, true));
 });
 
 async function authorizePaymentActor(req: any, order: { restaurantId: string }) {
@@ -1455,8 +1554,25 @@ async function recordDeliveredCounters(tx: any, order: { restaurantId: string; i
   });
 }
 
+const orderStatusPayloadSchema = z.object({
+  status: z.enum(ORDER_STATUSES),
+  estimatedMinutes: z.number().int().min(5).max(180).optional(),
+  cancelReason: z.enum(CANCELLATION_REASONS).optional()
+}).strict();
+
+const noShowPayloadSchema = z.object({
+  note: z.string().trim().max(300).optional()
+}).strict();
+
+function orderOperationHttpStatus(error: OrderOperationError): number {
+  if (error.code === 'ORDER_NOT_FOUND') return 404;
+  if (error.code === 'FORBIDDEN') return 403;
+  return 409;
+}
+
 apiRouter.patch('/orders/:id/status', authMiddleware, async (req: any, res) => {
   try {
+    const input = orderStatusPayloadSchema.parse(req.body);
     const orderToUpdate = await prisma.order.findUnique({
       where: { id: req.params.id },
       include: { items: true }
@@ -1475,36 +1591,73 @@ apiRouter.patch('/orders/:id/status', authMiddleware, async (req: any, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const status = resolveOrderTransition(orderToUpdate.status, req.body.status);
+    if (input.status === 'CANCELLED') {
+      if (req.user.role !== 'RESTAURANT') return res.status(403).json({ error: 'Forbidden' });
+      if (!input.cancelReason) return res.status(400).json({ code: 'INVALID_CANCELLATION_REASON', error: 'Selecciona un motivo de cancelaci?n.' });
+      const result = await cancelOrder({
+        prisma,
+        io: req.app.get('io'),
+        orderId: orderToUpdate.id,
+        actor: { id: req.user.userId, role: req.user.role },
+        reason: input.cancelReason
+      });
+      return res.json(toOrderDto(result.order, false, true));
+    }
+
+    if (input.status === 'ACCEPTED' && input.estimatedMinutes === undefined) {
+      return res.status(400).json({ code: 'INVALID_ESTIMATED_TIME', error: 'Selecciona un tiempo estimado entre 5 y 180 minutos.' });
+    }
+    const status = resolveOrderTransition(orderToUpdate.status, input.status);
     assertPaymentCompatibleOrderTransition(orderToUpdate.paymentMethod, orderToUpdate.paymentStatus, status);
-    const paymentStatus = status === 'CANCELLED'
-      ? paymentStatusForCancellation(orderToUpdate.paymentStatus)
-      : orderToUpdate.paymentStatus;
+    const estimatedReadyAt = status === 'ACCEPTED'
+      ? estimatedReadyAtFromMinutes(input.estimatedMinutes!)
+      : undefined;
 
     const order = await prisma.$transaction(async tx => {
-      const updated = await tx.order.update({
-        where: { id: orderToUpdate.id },
-        data: { status, paymentStatus },
-        include: { restaurant: true, client: true, items: { include: { product: true } } }
+      const changed = await tx.order.updateMany({
+        where: { id: orderToUpdate.id, status: orderToUpdate.status },
+        data: { status, ...(estimatedReadyAt ? { estimatedReadyAt } : {}) }
       });
+      if (changed.count !== 1) throw new OrderOperationError('ORDER_ALREADY_ATTENDED', 'El pedido cambi? antes de completar la acci?n.');
       await tx.orderStatusHistory.create({
-        data: { orderId: updated.id, status, notes: `Status updated to ${status}` }
+        data: { orderId: orderToUpdate.id, status, notes: `Status updated to ${status}` }
       });
       if (status === 'DELIVERED') await recordDeliveredCounters(tx, orderToUpdate);
-      return updated;
+      return tx.order.findUnique({
+        where: { id: orderToUpdate.id },
+        include: { restaurant: true, client: true, items: { include: { product: true } } }
+      });
     });
 
-    const io = req.app.get('io');
-    if (io) {
-      const event = { orderId: order.id, status, paymentStatus: order.paymentStatus };
-      io.emit('orderStatusUpdated', event);
-      io.to(`order_${order.id}`).emit('orderStatusUpdated', event);
-    }
-    res.json(toOrderDto(order, false));
+    if (!order) throw new OrderOperationError('ORDER_NOT_FOUND', 'Pedido no encontrado.');
+    emitSafeOrderEvent(req.app.get('io'), 'ORDER_UPDATED', order);
+    res.json(toOrderDto(order, false, req.user.role === 'RESTAURANT'));
   } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues[0].message });
+    if (error instanceof OrderOperationError) return res.status(orderOperationHttpStatus(error)).json({ code: error.code, error: error.message });
     if (error instanceof InvalidOrderTransitionError || error instanceof PaymentRuleError) {
       return res.status(409).json({ error: error.message });
     }
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+apiRouter.post('/orders/:id/no-show', authMiddleware, async (req: any, res) => {
+  try {
+    const input = noShowPayloadSchema.parse(req.body);
+    if (!['RESTAURANT', 'ADMIN'].includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' });
+    const result = await markCustomerNoShow({
+      prisma,
+      io: req.app.get('io'),
+      orderId: req.params.id,
+      actor: { id: req.user.userId, role: req.user.role },
+      note: input.note
+    });
+    res.json(toOrderDto(result.order, false, req.user.role === 'RESTAURANT'));
+  } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues[0].message });
+    if (error instanceof OrderOperationError) return res.status(orderOperationHttpStatus(error)).json({ code: error.code, error: error.message });
+    if (error instanceof InvalidOrderTransitionError) return res.status(409).json({ error: error.message });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -1531,7 +1684,7 @@ apiRouter.post('/orders/:id/payment/confirm', authMiddleware, async (req: any, r
       include: { restaurant: true, client: true, items: { include: { product: true } } }
     });
     const io = req.app.get('io');
-    if (io) io.to(`order_${order.id}`).emit('paymentStatusUpdated', { orderId: order.id, paymentStatus: 'PAID' });
+    emitSafeOrderEvent(io, 'PAYMENT_UPDATED', order);
     res.json(toOrderDto(order, false));
   } catch (error) {
     if (error instanceof PaymentRuleError) return res.status(409).json({ error: error.message });
@@ -1576,11 +1729,7 @@ apiRouter.post('/orders/:id/payment/confirm-and-deliver', authMiddleware, async 
       return updated;
     });
     const io = req.app.get('io');
-    if (io) {
-      const event = { orderId: order.id, status: 'DELIVERED', paymentStatus: 'PAID' };
-      io.emit('orderStatusUpdated', event);
-      io.to(`order_${order.id}`).emit('orderStatusUpdated', event);
-    }
+    emitSafeOrderEvent(io, 'ORDER_UPDATED', order);
     res.json(toOrderDto(order, false));
   } catch (error) {
     if (error instanceof InvalidOrderTransitionError || error instanceof PaymentRuleError) {
@@ -1589,6 +1738,31 @@ apiRouter.post('/orders/:id/payment/confirm-and-deliver', authMiddleware, async 
     res.status(500).json({ error: 'Server error' });
   }
 });
+const cancellationRequestSchema = z.object({
+  trackingToken: z.string().min(20).max(200).optional()
+}).strict();
+
+apiRouter.post('/orders/:id/cancellation-request', optionalAuthMiddleware, async (req: any, res) => {
+  try {
+    const input = cancellationRequestSchema.parse(req.body);
+    const actor = req.user?.role === 'CLIENT'
+      ? { id: req.user.userId as string, role: 'CLIENT' }
+      : null;
+    const result = await requestOrderCancellation({
+      prisma,
+      io: req.app.get('io'),
+      orderId: req.params.id,
+      actor,
+      trackingToken: input.trackingToken
+    });
+    res.json(toOrderDto(result.order, true));
+  } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues[0].message });
+    if (error instanceof OrderOperationError) return res.status(orderOperationHttpStatus(error)).json({ code: error.code, error: error.message });
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 apiRouter.get('/orders/:id/tracking', optionalAuthMiddleware, async (req: any, res) => {
   try {
     const order = await prisma.order.findUnique({
@@ -1604,7 +1778,7 @@ apiRouter.get('/orders/:id/tracking', optionalAuthMiddleware, async (req: any, r
     if (!order) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }
-    const authorized = req.query.token === order.trackingToken
+    const authorized = secureTokenEquals(order.trackingToken, req.query.token)
       || (req.user?.role === 'CLIENT' && req.user.userId === order.clientId)
       || (req.user?.role === 'RESTAURANT' && req.user.userId === order.restaurantId)
       || req.user?.role === 'ADMIN';

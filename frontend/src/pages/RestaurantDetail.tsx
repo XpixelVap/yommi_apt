@@ -86,6 +86,10 @@ export function RestaurantDetail() {
   if (!restaurant || restaurant.error) return <div className="text-center py-12 text-red-500">Error al cargar el restaurante.</div>;
 
   const handleAddToCart = (product: any) => {
+    if (!restaurant.acceptingOrders) {
+      setToast({ message: restaurant.message || 'El restaurante no recibe pedidos en este momento.', type: 'info' });
+      return;
+    }
     addItem({
       productId: product.id,
       name: product.name,
@@ -304,7 +308,9 @@ Con esto podrás:
     );
   }
 
-  const status = getRestaurantStatus(restaurant.opening_hours);
+  const status = restaurant.code
+    ? { isOpen: restaurant.acceptingOrders, text: restaurant.message }
+    : getRestaurantStatus(restaurant.opening_hours);
 
   const allProducts = restaurant.categories?.flatMap((c: any) => c.products) || [];
   const topProducts = [...allProducts].sort((a, b) => (b.order_count || 0) - (a.order_count || 0)).slice(0, 3);
@@ -312,6 +318,11 @@ Con esto podrás:
 
   return (
     <div className="space-y-8 pb-24 lg:pb-0">
+      {!restaurant.acceptingOrders && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-2xl font-medium">
+          {restaurant.message || 'El restaurante no recibe pedidos en este momento.'}
+        </div>
+      )}
       <div className="relative h-64 sm:h-80 rounded-3xl overflow-hidden shadow-sm bg-gray-100 flex items-center justify-center">
         {restaurant.cover_image || restaurant.coverUrl ? (
           <img src={restaurant.cover_image || restaurant.coverUrl} alt={restaurant.restaurant_name || restaurant.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />

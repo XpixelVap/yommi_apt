@@ -1,3 +1,5 @@
+import { isValidOpeningHours } from './restaurant-operational';
+
 export interface ReadinessProduct {
   isAvailable: boolean;
   price: number;
@@ -47,13 +49,7 @@ function hasText(value: string | null | undefined): boolean {
 }
 
 function hasValidHours(value: string | null | undefined): boolean {
-  if (!hasText(value)) return false;
-  try {
-    const parsed = JSON.parse(value as string);
-    return Boolean(parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0);
-  } catch {
-    return false;
-  }
+  return isValidOpeningHours(value);
 }
 
 function hasValidLocation(restaurant: ReadinessRestaurant): boolean {

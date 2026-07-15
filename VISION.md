@@ -509,3 +509,10 @@ Yommi no procesa pagos. Yommi coordina el proceso de venta. El restaurante conse
 La plataforma puede registrar el método elegido, comunicar instrucciones y coordinar una confirmación humana del restaurante, pero no recibe, retiene, valida ni concilia dinero del pedido. Una confirmación en Yommi representa exclusivamente la declaración operativa del restaurante; no es evidencia bancaria. No se implementan reembolsos y un pedido ya pagado requiere resolución manual si necesita cancelarse.
 
 Los pagos de pedidos permanecen separados de la facturación de la mensualidad SaaS. En el MVP solo se coordinan pago al recoger, efectivo contra entrega y transferencia anticipada configurada por el restaurante.
+## Promesa operativa mínima para el piloto
+
+Un restaurante debe poder declarar con claridad si está abierto, pausado o cerrado. Yommi solo acepta pedidos cuando el negocio está aprobado, activo, listo, abierto y dentro del horario configurado o de una apertura manual temporal. Cerrar o pausar tiene efecto autoritativo en backend; ninguna pantalla del cliente puede forzar un pedido.
+
+Durante la atención, el restaurante recibe contacto e instrucciones del cliente en contexto autorizado, confirma un tiempo estimado y mantiene estados visibles. Puede cancelar pedidos no pagados con un motivo explícito; los pagados requieren resolución manual porque Yommi no procesa devoluciones. Un cliente invitado puede pedir cancelación solo mientras el pedido está pendiente y conserva el token privado de seguimiento. La ausencia en pickup se registra como CUSTOMER_NO_SHOW, nunca como entrega ni venta.
+
+El piloto comunica pérdidas de conexión y resincroniza al volver, pero no promete operación offline. Las alertas sonoras dependen del permiso del navegador y siempre deben acompañarse de una señal visual. Estas reglas forman parte del MVP operativo y tienen prioridad sobre automatización, IA o capacidades de crecimiento.
