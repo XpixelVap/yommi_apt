@@ -1,0 +1,266 @@
+[
+  {
+    "id": "busqueda",
+    "source": "busqueda.png",
+    "slug": "busqueda",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2247315
+    },
+    "files": {
+      "32": "32/busqueda.webp",
+      "64": "64/busqueda.webp",
+      "128": "128/busqueda.webp",
+      "512": "512/busqueda.webp"
+    },
+    "bytes": {
+      "32": 658,
+      "64": 1126,
+      "128": 2538,
+      "512": 17118
+    }
+  },
+  {
+    "id": "calificacion",
+    "source": "calificacion.png",
+    "slug": "calificacion",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2221731
+    },
+    "files": {
+      "32": "32/calificacion.webp",
+      "64": "64/calificacion.webp",
+      "128": "128/calificacion.webp",
+      "512": "512/calificacion.webp"
+    },
+    "bytes": {
+      "32": 632,
+      "64": 1094,
+      "128": 2542,
+      "512": 18030
+    }
+  },
+  {
+    "id": "carritocompras",
+    "source": "carritocompras.png",
+    "slug": "carritocompras",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2477604
+    },
+    "files": {
+      "32": "32/carritocompras.webp",
+      "64": "64/carritocompras.webp",
+      "128": "128/carritocompras.webp",
+      "512": "512/carritocompras.webp"
+    },
+    "bytes": {
+      "32": 836,
+      "64": 1486,
+      "128": 3904,
+      "512": 31788
+    }
+  },
+  {
+    "id": "delivery",
+    "source": "delivery.png",
+    "slug": "delivery",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2264412
+    },
+    "files": {
+      "32": "32/delivery.webp",
+      "64": "64/delivery.webp",
+      "128": "128/delivery.webp",
+      "512": "512/delivery.webp"
+    },
+    "bytes": {
+      "32": 674,
+      "64": 1354,
+      "128": 3110,
+      "512": 22424
+    }
+  },
+  {
+    "id": "favoritos",
+    "source": "favoritos.png",
+    "slug": "favoritos",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2281016
+    },
+    "files": {
+      "32": "32/favoritos.webp",
+      "64": "64/favoritos.webp",
+      "128": "128/favoritos.webp",
+      "512": "512/favoritos.webp"
+    },
+    "bytes": {
+      "32": 742,
+      "64": 1264,
+      "128": 3022,
+      "512": 21290
+    }
+  },
+  {
+    "id": "notificaciones",
+    "source": "notificaciones.png",
+    "slug": "notificaciones",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2152920
+    },
+    "files": {
+      "32": "32/notificaciones.webp",
+      "64": "64/notificaciones.webp",
+      "128": "128/notificaciones.webp",
+      "512": "512/notificaciones.webp"
+    },
+    "bytes": {
+      "32": 544,
+      "64": 912,
+      "128": 2084,
+      "512": 13328
+    }
+  },
+  {
+    "id": "pago",
+    "source": "pago.png",
+    "slug": "pago",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2312487
+    },
+    "files": {
+      "32": "32/pago.webp",
+      "64": "64/pago.webp",
+      "128": "128/pago.webp",
+      "512": "512/pago.webp"
+    },
+    "bytes": {
+      "32": 688,
+      "64": 1216,
+      "128": 2860,
+      "512": 21894
+    }
+  },
+  {
+    "id": "perfil",
+    "source": "perfil.png",
+    "slug": "perfil",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2275393
+    },
+    "files": {
+      "32": "32/perfil.webp",
+      "64": "64/perfil.webp",
+      "128": "128/perfil.webp",
+      "512": "512/perfil.webp"
+    },
+    "bytes": {
+      "32": 548,
+      "64": 912,
+      "128": 2062,
+      "512": 13404
+    }
+  },
+  {
+    "id": "pickup",
+    "source": "pickup.png",
+    "slug": "pickup",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2231966
+    },
+    "files": {
+      "32": "32/pickup.webp",
+      "64": "64/pickup.webp",
+      "128": "128/pickup.webp",
+      "512": "512/pickup.webp"
+    },
+    "bytes": {
+      "32": 768,
+      "64": 1332,
+      "128": 3020,
+      "512": 21892
+    }
+  },
+  {
+    "id": "promociones",
+    "source": "promociones.png",
+    "slug": "promociones",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2325897
+    },
+    "files": {
+      "32": "32/promociones.webp",
+      "64": "64/promociones.webp",
+      "128": "128/promociones.webp",
+      "512": "512/promociones.webp"
+    },
+    "bytes": {
+      "32": 770,
+      "64": 1522,
+      "128": 3608,
+      "512": 28548
+    }
+  },
+  {
+    "id": "tiempo",
+    "source": "tiempo.png",
+    "slug": "tiempo",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2237934
+    },
+    "files": {
+      "32": "32/tiempo.webp",
+      "64": "64/tiempo.webp",
+      "128": "128/tiempo.webp",
+      "512": "512/tiempo.webp"
+    },
+    "bytes": {
+      "32": 540,
+      "64": 1016,
+      "128": 2330,
+      "512": 17916
+    }
+  },
+  {
+    "id": "ubicacion",
+    "source": "ubicacion.png",
+    "slug": "ubicacion",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2319194
+    },
+    "files": {
+      "32": "32/ubicacion.webp",
+      "64": "64/ubicacion.webp",
+      "128": "128/ubicacion.webp",
+      "512": "512/ubicacion.webp"
+    },
+    "bytes": {
+      "32": 736,
+      "64": 1436,
+      "128": 3388,
+      "512": 23894
+    }
+  }
+]

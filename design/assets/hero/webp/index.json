@@ -1,0 +1,24 @@
+[
+  {
+    "id": "hamburguesa-hero",
+    "source": "hamburguesa-hero.png",
+    "slug": "hamburguesa-hero",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3050753
+    },
+    "files": {
+      "32": "32/hamburguesa-hero.webp",
+      "64": "64/hamburguesa-hero.webp",
+      "128": "128/hamburguesa-hero.webp",
+      "512": "512/hamburguesa-hero.webp"
+    },
+    "bytes": {
+      "32": 882,
+      "64": 1778,
+      "128": 4746,
+      "512": 45438
+    }
+  }
+]

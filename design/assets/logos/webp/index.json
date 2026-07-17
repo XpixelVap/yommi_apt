@@ -1,0 +1,46 @@
+[
+  {
+    "id": "ico-logori-1",
+    "source": "ico-logori (1).png",
+    "slug": "ico-logori-1",
+    "original": {
+      "width": 865,
+      "height": 526,
+      "bytes": 110046
+    },
+    "files": {
+      "32": "32/ico-logori-1.webp",
+      "64": "64/ico-logori-1.webp",
+      "128": "128/ico-logori-1.webp",
+      "512": "512/ico-logori-1.webp"
+    },
+    "bytes": {
+      "32": 934,
+      "64": 2148,
+      "128": 5362,
+      "512": 27812
+    }
+  },
+  {
+    "id": "ico-logori-2",
+    "source": "ico-logori (2).png",
+    "slug": "ico-logori-2",
+    "original": {
+      "width": 2048,
+      "height": 2048,
+      "bytes": 97219
+    },
+    "files": {
+      "32": "32/ico-logori-2.webp",
+      "64": "64/ico-logori-2.webp",
+      "128": "128/ico-logori-2.webp",
+      "512": "512/ico-logori-2.webp"
+    },
+    "bytes": {
+      "32": 790,
+      "64": 1408,
+      "128": 2708,
+      "512": 11370
+    }
+  }
+]

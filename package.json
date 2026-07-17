@@ -19,10 +19,13 @@
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
-    "postinstall": "npm run prisma:generate --workspace=backend"
+    "postinstall": "npm run prisma:generate --workspace=backend",
+    "optimize-assets": "tsx scripts/optimize-assets.ts"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "sharp": "^0.34.5",
+    "tsx": "^4.21.0"
   },
   "dependencies": {
     "pg": "^8.20.0"

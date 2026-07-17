@@ -1,0 +1,222 @@
+[
+  {
+    "id": "ico-bebidas",
+    "source": "ico-bebidas.png",
+    "slug": "ico-bebidas",
+    "original": {
+      "width": 320,
+      "height": 320,
+      "bytes": 121203
+    },
+    "files": {
+      "32": "32/ico-bebidas.webp",
+      "64": "64/ico-bebidas.webp",
+      "128": "128/ico-bebidas.webp",
+      "512": "512/ico-bebidas.webp"
+    },
+    "bytes": {
+      "32": 1114,
+      "64": 2366,
+      "128": 5352,
+      "512": 36170
+    }
+  },
+  {
+    "id": "ico-cafe",
+    "source": "ico-cafe.png",
+    "slug": "ico-cafe",
+    "original": {
+      "width": 320,
+      "height": 320,
+      "bytes": 111148
+    },
+    "files": {
+      "32": "32/ico-cafe.webp",
+      "64": "64/ico-cafe.webp",
+      "128": "128/ico-cafe.webp",
+      "512": "512/ico-cafe.webp"
+    },
+    "bytes": {
+      "32": 1004,
+      "64": 2346,
+      "128": 5192,
+      "512": 24076
+    }
+  },
+  {
+    "id": "ico-desayuno",
+    "source": "ico-desayuno.png",
+    "slug": "ico-desayuno",
+    "original": {
+      "width": 320,
+      "height": 320,
+      "bytes": 133020
+    },
+    "files": {
+      "32": "32/ico-desayuno.webp",
+      "64": "64/ico-desayuno.webp",
+      "128": "128/ico-desayuno.webp",
+      "512": "512/ico-desayuno.webp"
+    },
+    "bytes": {
+      "32": 1024,
+      "64": 2438,
+      "128": 6464,
+      "512": 46422
+    }
+  },
+  {
+    "id": "ico-ensalada",
+    "source": "ico-ensalada.png",
+    "slug": "ico-ensalada",
+    "original": {
+      "width": 320,
+      "height": 320,
+      "bytes": 132168
+    },
+    "files": {
+      "32": "32/ico-ensalada.webp",
+      "64": "64/ico-ensalada.webp",
+      "128": "128/ico-ensalada.webp",
+      "512": "512/ico-ensalada.webp"
+    },
+    "bytes": {
+      "32": 1106,
+      "64": 2486,
+      "128": 5620,
+      "512": 33468
+    }
+  },
+  {
+    "id": "ico-hamburguesa",
+    "source": "ico-hamburguesa.png",
+    "slug": "ico-hamburguesa",
+    "original": {
+      "width": 320,
+      "height": 320,
+      "bytes": 190240
+    },
+    "files": {
+      "32": "32/ico-hamburguesa.webp",
+      "64": "64/ico-hamburguesa.webp",
+      "128": "128/ico-hamburguesa.webp",
+      "512": "512/ico-hamburguesa.webp"
+    },
+    "bytes": {
+      "32": 1212,
+      "64": 3130,
+      "128": 8034,
+      "512": 56426
+    }
+  },
+  {
+    "id": "ico-pizza",
+    "source": "ico-pizza.png",
+    "slug": "ico-pizza",
+    "original": {
+      "width": 320,
+      "height": 320,
+      "bytes": 153836
+    },
+    "files": {
+      "32": "32/ico-pizza.webp",
+      "64": "64/ico-pizza.webp",
+      "128": "128/ico-pizza.webp",
+      "512": "512/ico-pizza.webp"
+    },
+    "bytes": {
+      "32": 1228,
+      "64": 2892,
+      "128": 7114,
+      "512": 47064
+    }
+  },
+  {
+    "id": "ico-postres",
+    "source": "ico-postres.png",
+    "slug": "ico-postres",
+    "original": {
+      "width": 320,
+      "height": 320,
+      "bytes": 140342
+    },
+    "files": {
+      "32": "32/ico-postres.webp",
+      "64": "64/ico-postres.webp",
+      "128": "128/ico-postres.webp",
+      "512": "512/ico-postres.webp"
+    },
+    "bytes": {
+      "32": 1134,
+      "64": 2612,
+      "128": 5894,
+      "512": 32708
+    }
+  },
+  {
+    "id": "ico-snacks",
+    "source": "ico-snacks.png",
+    "slug": "ico-snacks",
+    "original": {
+      "width": 320,
+      "height": 320,
+      "bytes": 159620
+    },
+    "files": {
+      "32": "32/ico-snacks.webp",
+      "64": "64/ico-snacks.webp",
+      "128": "128/ico-snacks.webp",
+      "512": "512/ico-snacks.webp"
+    },
+    "bytes": {
+      "32": 1320,
+      "64": 3420,
+      "128": 9440,
+      "512": 60950
+    }
+  },
+  {
+    "id": "ico-sushi",
+    "source": "ico-sushi.png",
+    "slug": "ico-sushi",
+    "original": {
+      "width": 320,
+      "height": 320,
+      "bytes": 166516
+    },
+    "files": {
+      "32": "32/ico-sushi.webp",
+      "64": "64/ico-sushi.webp",
+      "128": "128/ico-sushi.webp",
+      "512": "512/ico-sushi.webp"
+    },
+    "bytes": {
+      "32": 1082,
+      "64": 2442,
+      "128": 6262,
+      "512": 38714
+    }
+  },
+  {
+    "id": "ico-taco",
+    "source": "ico-taco.png",
+    "slug": "ico-taco",
+    "original": {
+      "width": 320,
+      "height": 320,
+      "bytes": 154867
+    },
+    "files": {
+      "32": "32/ico-taco.webp",
+      "64": "64/ico-taco.webp",
+      "128": "128/ico-taco.webp",
+      "512": "512/ico-taco.webp"
+    },
+    "bytes": {
+      "32": 1184,
+      "64": 2778,
+      "128": 6714,
+      "512": 44460
+    }
+  }
+]
