@@ -1,6 +1,6 @@
-import { Heart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { generateSlug } from '../../utils';
+import { YommigoIcon } from '../YommigoIcon';
 
 export interface LandingRestaurant {
   id: string;
@@ -34,12 +34,12 @@ export function RestaurantCard({ restaurant, index }: { restaurant: LandingResta
       <div className="landing-restaurant-card__image">
         <img src={cover} alt={`Platillos de ${name}`} loading="lazy" />
         {(restaurant.promotion || restaurant.isNew) && <span className={restaurant.isNew ? 'is-new' : ''}>{restaurant.isNew ? 'Nuevo' : restaurant.promotion}</span>}
-        <span className="landing-restaurant-card__favorite" aria-hidden="true"><Heart /></span>
+        <span className="landing-restaurant-card__favorite" aria-hidden="true"><YommigoIcon name="favoritos" size={32} alt="" loading="lazy" /></span>
       </div>
       <div className="landing-restaurant-card__body">
         <h3>{name}</h3>
-        <div className="landing-restaurant-card__meta"><p>{cuisine}</p><p>{restaurant.rating_score ? restaurant.rating_score.toFixed(1) : 'Nuevo'} <Star /></p></div>
-        <div className="landing-restaurant-card__meta"><p>{restaurant.delivery_time || '25\u201335 min'}</p><strong>{restaurant.price_level || '$$'}</strong></div>
+        <div className="landing-restaurant-card__meta"><p>{cuisine}</p><p>{restaurant.rating_score ? restaurant.rating_score.toFixed(1) : 'Nuevo'} <YommigoIcon name="calificacion" size={32} alt="" loading="lazy" /></p></div>
+        <div className="landing-restaurant-card__meta"><p className="landing-restaurant-card__time"><YommigoIcon name="tiempo" size={32} alt="" loading="lazy" />{restaurant.delivery_time || '25\u201335 min'}</p><strong>{restaurant.price_level || '$$'}</strong></div>
       </div>
     </Link>
   );

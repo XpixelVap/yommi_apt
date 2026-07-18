@@ -1,6 +1,7 @@
-import { ArrowRight, BadgeCheck, Heart, ShieldCheck, Truck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { YommigoIcon, type YommigoIconName } from '../components/YommigoIcon';
 import { CategoryCard } from '../components/landing/CategoryCard';
 import { Footer } from '../components/landing/Footer';
 import { Hero } from '../components/landing/Hero';
@@ -11,23 +12,24 @@ import { SectionTitle } from '../components/landing/SectionTitle';
 import { useCityStore } from '../store';
 import { generateSlug } from '../utils';
 
-const CATEGORIES = [
-  { name: 'Hamburguesas', icon: '\ud83c\udf54', slug: 'hamburguesas' },
-  { name: 'Pizza', icon: '\ud83c\udf55', slug: 'pizza' },
-  { name: 'Sushi', icon: '\ud83c\udf63', slug: 'sushi' },
-  { name: 'Tacos', icon: '\ud83c\udf2e', slug: 'tacos' },
-  { name: 'Ensaladas', icon: '\ud83e\udd57', slug: 'ensaladas' },
-  { name: 'Postres', icon: '\ud83c\udf70', slug: 'postres' },
-  { name: 'Bebidas', icon: '\ud83e\udd64', slug: 'bebidas' },
-  { name: 'Caf\u00e9', icon: '\u2615', slug: 'cafeterias' },
-  { name: 'M\u00e1s', icon: '\u2022\u2022\u2022', slug: 'todas' },
+const CATEGORIES: Array<{ name: string; icon: YommigoIconName; slug: string }> = [
+  { name: 'Hamburguesas', icon: 'hamburguesa', slug: 'hamburguesas' },
+  { name: 'Pizza', icon: 'pizza', slug: 'pizza' },
+  { name: 'Tacos', icon: 'taco', slug: 'tacos' },
+  { name: 'Sushi', icon: 'sushi', slug: 'sushi' },
+  { name: 'Ensaladas', icon: 'ensalada', slug: 'ensaladas' },
+  { name: 'Desayunos', icon: 'desayuno', slug: 'desayunos' },
+  { name: 'Antojitos', icon: 'snacks', slug: 'antojitos' },
+  { name: 'Postres', icon: 'postres', slug: 'postres' },
+  { name: 'Bebidas', icon: 'bebidas', slug: 'bebidas' },
+  { name: 'Caf\u00e9', icon: 'cafe', slug: 'cafeterias' },
 ];
 
-const BENEFITS = [
-  { icon: Truck, title: 'Entrega r\u00e1pida', copy: 'Tu comida en minutos', tone: 'orange' },
-  { icon: ShieldCheck, title: 'Pago seguro', copy: 'Tus datos siempre protegidos', tone: 'green' },
-  { icon: BadgeCheck, title: 'Restaurantes verificados', copy: 'Calidad en la que puedes confiar', tone: 'gold' },
-  { icon: Heart, title: 'Apoya lo local', copy: 'Impulsa a los negocios de tu ciudad', tone: 'pink' },
+const BENEFITS: Array<{ icon: YommigoIconName; title: string; copy: string; tone: string }> = [
+  { icon: 'delivery', title: 'Entrega r\u00e1pida', copy: 'Tu comida en minutos', tone: 'orange' },
+  { icon: 'pago', title: 'Pago seguro', copy: 'Tus datos siempre protegidos', tone: 'green' },
+  { icon: 'calificacion', title: 'Restaurantes verificados', copy: 'Calidad en la que puedes confiar', tone: 'gold' },
+  { icon: 'favoritos', title: 'Apoya lo local', copy: 'Impulsa a los negocios de tu ciudad', tone: 'pink' },
 ];
 
 export function Home() {
@@ -63,7 +65,7 @@ export function Home() {
         <section className="landing-section landing-categories">
           <SectionTitle>Explora por categor&iacute;a</SectionTitle>
           <div className="landing-categories__track">
-            {CATEGORIES.map((category, index) => <CategoryCard key={category.slug} name={category.name} icon={category.icon} href={`/${category.slug}/${generateSlug(displayCity)}`} muted={index === CATEGORIES.length - 1} />)}
+            {CATEGORIES.map((category) => <CategoryCard key={category.slug} name={category.name} icon={category.icon} href={`/${category.slug}/${generateSlug(displayCity)}`} />)}
           </div>
         </section>
         <section className="landing-section landing-restaurants">
@@ -82,7 +84,7 @@ export function Home() {
         <PromotionCard />
         <section className="landing-section landing-why">
           <h2>&iquest;Por qu&eacute; elegir Yommigo?</h2>
-          <div className="landing-why__grid">{BENEFITS.map(({ icon: Icon, title, copy, tone }) => <article key={title}><span className={`is-${tone}`}><Icon /></span><div><h3>{title}</h3><p>{copy}</p></div></article>)}</div>
+          <div className="landing-why__grid">{BENEFITS.map(({ icon, title, copy, tone }) => <article key={title}><span className={`is-${tone}`}><YommigoIcon name={icon} size={64} alt="" loading="lazy" /></span><div><h3>{title}</h3><p>{copy}</p></div></article>)}</div>
         </section>
         <section className="landing-app-banner">
           <div><h2>Pide desde <span>nuestra app</span></h2><p>Una experiencia a&uacute;n m&aacute;s r&aacute;pida y pr&aacute;ctica.</p></div>

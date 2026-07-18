@@ -1,5 +1,19 @@
 import { Link } from 'react-router-dom';
+import { YommigoIcon, type YommigoIconName } from '../YommigoIcon';
 
-export function CategoryCard({ name, icon, href, muted = false }: { name: string; icon: string; href: string; muted?: boolean }) {
-  return <Link to={href} className={`landing-category-card ${muted ? 'is-muted' : ''}`}><span aria-hidden="true">{icon}</span><strong>{name}</strong></Link>;
+interface CategoryCardProps {
+  name: string;
+  icon: YommigoIconName;
+  href: string;
+}
+
+export function CategoryCard({ name, icon, href }: CategoryCardProps) {
+  return (
+    <Link to={href} className="landing-category-card">
+      <span aria-hidden="true">
+        <YommigoIcon name={icon} size={128} alt="" loading="lazy" />
+      </span>
+      <strong>{name}</strong>
+    </Link>
+  );
 }
