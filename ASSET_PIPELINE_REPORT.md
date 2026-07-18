@@ -1,10 +1,16 @@
 # Reporte del pipeline de assets de Yommigo
 
+## Sprint 7C.1: normalizaci&oacute;n oficial
+
+Se normalizaron los nombres de los 25 PNG m&aacute;ster sin alterar su contenido. Trece archivos requirieron cambio de nombre: diez iconos de comida perdieron el prefijo redundante `ico-`, `carritocompras.png` pas&oacute; a `carrito-compras.png` y los dos logos recibieron nombres descriptivos aprobados.
+
+Los cuatro directorios `webp/` generados en Sprint 7C se eliminaron y regeneraron desde los PNG renombrados. No quedaron nombres anteriores ni derivados hu&eacute;rfanos.
+
 ## Resumen
 
 El pipeline oficial descubre recursivamente los PNG m&aacute;ster dentro de `design/assets/`, excluye carpetas `webp/`, archivos ocultos y temporales, normaliza nombres y genera derivados WebP transparentes en 512, 128, 64 y 32 px.
 
-La ejecuci&oacute;n proces&oacute; correctamente las cuatro colecciones encontradas sin modificar los PNG originales.
+La ejecuci&oacute;n proces&oacute; correctamente las cuatro colecciones encontradas sin modificar visualmente los PNG originales.
 
 ## Resultados
 
@@ -43,22 +49,23 @@ La reducci&oacute;n aproximada al comparar el peso total de las cuatro variantes
 
 Los siguientes diez PNG de `food-icons/` tienen resoluci&oacute;n original de 320x320 px. La variante de 512 px requiere ampliaci&oacute;n controlada; las variantes de 128, 64 y 32 px no requieren ampliaci&oacute;n:
 
-- `ico-bebidas.png`
-- `ico-cafe.png`
-- `ico-desayuno.png`
-- `ico-ensalada.png`
-- `ico-hamburguesa.png`
-- `ico-pizza.png`
-- `ico-postres.png`
-- `ico-snacks.png`
-- `ico-sushi.png`
-- `ico-taco.png`
+- `bebidas.png`
+- `cafe.png`
+- `desayuno.png`
+- `ensalada.png`
+- `hamburguesa.png`
+- `pizza.png`
+- `postres.png`
+- `snacks.png`
+- `sushi.png`
+- `taco.png`
 
 No se detectaron colisiones de nombres ni errores de procesamiento.
 
 ## Validaciones
 
-- 25 hashes SHA-256 de los PNG son id&eacute;nticos antes y despu&eacute;s de ejecutar el pipeline.
+- Los hashes SHA-256 de los 13 PNG renombrados son id&eacute;nticos antes y despu&eacute;s del cambio de nombre.
+- Los 25 PNG conservan sus bytes, dimensiones y transparencia originales.
 - Los 100 WebP tienen dimensiones cuadradas exactas seg&uacute;n su carpeta.
 - Los 100 WebP conservan canal alfa.
 - Los cuatro manifiestos contienen 25 entradas en total.
@@ -74,6 +81,7 @@ No se detectaron colisiones de nombres ni errores de procesamiento.
 
 ```bash
 npm install --save-dev --ignore-scripts sharp@0.34.5 tsx@4.21.0
+npm run optimize-assets
 npm run optimize-assets
 npm run typecheck
 npm run build
@@ -101,4 +109,8 @@ El primer intento de `npm run optimize-assets` dentro del sandbox fall&oacute; c
 - `design/assets/logos/webp/**`
 - `design/assets/ui-icons/webp/**`
 
-Los PNG ubicados en `design/assets/` son los m&aacute;sters proporcionados y permanecen intactos. El frontend y el backend no fueron modificados por este sprint.
+Los PNG ubicados en `design/assets/` son los m&aacute;sters proporcionados: solo cambiaron los 13 nombres indicados y su contenido permanece intacto. El frontend y el backend no fueron modificados por este sprint.
+
+## Deuda pendiente de marca
+
+El contenido visual de ambos logos todav&iacute;a muestra **&ldquo;Yommi&rdquo;**. Debe actualizarse posteriormente a **&ldquo;Yommigo&rdquo;** como un cambio visual separado y aprobado. Sprint 7C.1 no modifica p&iacute;xeles, transparencia, color ni composici&oacute;n de los logos.

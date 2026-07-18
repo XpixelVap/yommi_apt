@@ -44,19 +44,19 @@
     }
   },
   {
-    "id": "carritocompras",
-    "source": "carritocompras.png",
-    "slug": "carritocompras",
+    "id": "carrito-compras",
+    "source": "carrito-compras.png",
+    "slug": "carrito-compras",
     "original": {
       "width": 1536,
       "height": 1024,
       "bytes": 2477604
     },
     "files": {
-      "32": "32/carritocompras.webp",
-      "64": "64/carritocompras.webp",
-      "128": "128/carritocompras.webp",
-      "512": "512/carritocompras.webp"
+      "32": "32/carrito-compras.webp",
+      "64": "64/carrito-compras.webp",
+      "128": "128/carrito-compras.webp",
+      "512": "512/carrito-compras.webp"
     },
     "bytes": {
       "32": 836,

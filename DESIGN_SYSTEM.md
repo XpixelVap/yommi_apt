@@ -2,7 +2,7 @@
 
 ## Fuente oficial de assets
 
-`design/assets/` es la fuente can&oacute;nica de los recursos visuales oficiales de Yommigo. Los archivos PNG dentro de sus colecciones son los m&aacute;sters y nunca deben modificarse, renombrarse ni reemplazarse durante la optimizaci&oacute;n web.
+`design/assets/` es la fuente can&oacute;nica de los recursos visuales oficiales de Yommigo. Los archivos PNG dentro de sus colecciones son los m&aacute;sters y nunca deben modificarse visualmente ni reemplazarse durante la optimizaci&oacute;n web. Sus nombres can&oacute;nicos deben conservarse despu&eacute;s de la normalizaci&oacute;n inicial.
 
 Los WebP son derivados para consumo web. El pipeline los genera dentro de una carpeta `webp/` junto a cada colecci&oacute;n de PNG:
 
@@ -44,6 +44,23 @@ Todos los derivados son lienzos cuadrados transparentes. El contenido conserva s
 5. Verifica el `webp/index.json` de la colecci&oacute;n antes de consumir el asset.
 
 El descubrimiento es recursivo y no depende de una lista fija de carpetas. Las carpetas `webp/`, los archivos ocultos, los temporales y los formatos distintos de PNG se ignoran.
+
+## Convenci&oacute;n oficial de nombres
+
+Los PNG m&aacute;ster y sus derivados usan nombres descriptivos en min&uacute;sculas, sin acentos, espacios, par&eacute;ntesis ni caracteres especiales. Las palabras se separan con guiones medios. No se usan prefijos redundantes como `ico-` cuando la colecci&oacute;n ya identifica el tipo de recurso.
+
+Ejemplos can&oacute;nicos:
+
+- `food-icons/hamburguesa.png`
+- `ui-icons/carrito-compras.png`
+- `logos/yommigo-logotipo-horizontal-blanco.png`
+- `logos/yommigo-logo-circular-verde.png`
+
+El nombre del PNG y el `id`, `slug` y nombre de cada WebP deben coincidir sem&aacute;nticamente. Tras renombrar un m&aacute;ster, elimina solamente sus derivados anteriores y ejecuta de nuevo el pipeline para evitar archivos hu&eacute;rfanos.
+
+## Deuda de identidad visual
+
+Los dos logos oficiales conservan intacto su contenido visual en esta etapa. El arte visible todav&iacute;a dice **&ldquo;Yommi&rdquo;** y deber&aacute; actualizarse posteriormente a **&ldquo;Yommigo&rdquo;** mediante un cambio visual aprobado. La normalizaci&oacute;n de nombres no corrige ni altera ese arte.
 
 ## Separaci&oacute;n entre imagen e interfaz
 
