@@ -79,3 +79,17 @@ Antes de habilitar uploads se debe implementar un adaptador `FileStorage` con:
 - observabilidad sin registrar contenido sensible.
 
 El cambio debe realizarse en el binding `backend/src/storage/index.ts`, sin reescribir las rutas consumidoras.
+
+## Bootstrap oficial del primer administrador
+
+Ejecutar este procedimiento una sola vez por ambiente, después de aplicar las migraciones y antes de habilitar la administración:
+
+```bash
+npm run bootstrap-admin
+```
+
+El comando requiere una terminal interactiva y una conexión válida en `DATABASE_URL`. Primero comprueba que no exista ningún usuario con rol `ADMIN`; si ya existe uno, termina antes de solicitar credenciales y no modifica datos. Si el ambiente no está inicializado, solicita correo y contraseña sin mostrar la contraseña.
+
+La contraseña debe tener entre 12 y 72 caracteres e incluir mayúscula, minúscula, número y carácter especial, sin espacios. La creación se protege con un bloqueo transaccional PostgreSQL y una segunda comprobación para impedir dos administradores iniciales concurrentes. El usuario queda con `role=ADMIN`, `provider=email` e `isSuspended=false`. Las ejecuciones posteriores se rechazan; este comando no sirve para administrar o reemplazar usuarios existentes.
+
+No ejecutes el comando desde CI, un Dockerfile o un proceso no interactivo. Nunca pases la contraseña mediante argumentos, variables de entorno, logs o historial de shell.

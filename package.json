@@ -16,6 +16,7 @@
     "prisma:generate": "npm run prisma:generate --workspace=backend",
     "prisma:validate": "npm run prisma:validate --workspace=backend",
     "prisma:migrate:deploy": "npm run prisma:migrate:deploy --workspace=backend",
+    "bootstrap-admin": "npm run bootstrap-admin --workspace=backend",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",

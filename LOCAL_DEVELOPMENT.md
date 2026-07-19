@@ -79,3 +79,21 @@ npm run db:down
 ```
 
 No agregues `-v` salvo que quieras eliminar deliberadamente el volumen local.
+
+## 8. Crear el primer administrador
+
+Con PostgreSQL levantado, las migraciones aplicadas y el backend configurado mediante `backend/.env`, ejecuta desde la raíz:
+
+```bash
+npm run bootstrap-admin
+```
+
+El comando:
+
+1. aborta inmediatamente si ya existe un usuario `ADMIN`;
+2. solicita un correo válido;
+3. solicita una contraseña oculta de 12 a 72 caracteres con mayúscula, minúscula, número y carácter especial, sin espacios;
+4. crea exclusivamente el primer administrador con proveedor `email`;
+5. muestra solo el resultado mínimo y nunca imprime la contraseña.
+
+La operación es de una sola ejecución por base de datos. No borres ni cambies usuarios para volver a ejecutarla. Para comprobar el acceso, inicia backend y frontend y usa el login actual con las credenciales introducidas.
