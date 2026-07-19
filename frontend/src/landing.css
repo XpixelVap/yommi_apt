@@ -1,48 +1,454 @@
-:root{--yo-orange:#ff4f0a;--yo-orange-dark:#e94606;--yo-ink:#171717;--yo-muted:#676767;--yo-border:#ece9e5;--yo-shadow:0 12px 30px rgba(36,25,18,.08)}
-html{scroll-behavior:smooth}body{margin:0;min-width:320px;background:#fff;color:var(--yo-ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}a{color:inherit;text-decoration:none}
-.min-h-screen:has(.landing-page)>header,.min-h-screen:has(.landing-page)>.bg-orange-600{display:none}.min-h-screen>main:has(.landing-page){max-width:none;padding:0}.landing-page{overflow:hidden;background:#fff}.landing-container{width:min(100% - 48px,1160px);margin-inline:auto}
-.landing-navbar{height:92px;display:flex;align-items:center;background:rgba(255,255,255,.96);position:relative;z-index:30}.landing-navbar__inner{height:100%;display:flex;align-items:center;gap:34px}
-.brand-mark{color:var(--yo-orange);font-size:37px;font-weight:850;letter-spacing:-2.4px;line-height:1;position:relative;display:inline-flex;padding:8px 1px 13px;flex:none}.brand-mark:after{content:"";position:absolute;width:71px;height:17px;border-bottom:4px solid currentColor;border-radius:0 0 60% 50%;left:19px;bottom:0;transform:rotate(3deg)}.brand-mark i:before,.brand-mark i:after{content:"";position:absolute;width:7px;height:4px;border-radius:100% 0 100% 0;background:#35a945;right:-8px;top:3px;transform:rotate(-28deg)}.brand-mark i:after{width:4px;height:7px;right:-13px;top:12px;transform:rotate(34deg)}.brand-mark--compact{font-size:27px;letter-spacing:-1.8px}.brand-mark--compact:after{width:52px;height:12px;border-width:3px;left:14px}
-.landing-navbar__city{margin-right:auto}.landing-navbar__links{display:flex;align-items:center;gap:37px;font-size:14px;font-weight:700;white-space:nowrap}.landing-navbar__links>a:not(.landing-navbar__session):hover{color:var(--yo-orange)}.landing-navbar__cart{position:relative;display:grid;place-items:center}.landing-navbar__cart svg{width:26px;height:26px;stroke-width:2}.landing-navbar__cart span{position:absolute;top:-9px;right:-11px;min-width:20px;height:20px;padding-inline:5px;display:grid;place-items:center;border-radius:999px;background:var(--yo-orange);color:#fff;font-size:11px}.landing-navbar__session{border:1px solid var(--yo-border);border-radius:999px;min-height:48px;padding:0 20px;display:inline-flex;align-items:center;gap:10px;box-shadow:0 6px 18px rgba(30,20,12,.04)}.landing-navbar__session svg{width:20px}.landing-navbar__mobile-actions{display:none;margin-left:auto;align-items:center;gap:17px}.landing-navbar__mobile-actions button{min-width:44px;min-height:44px;border:0;background:transparent;padding:8px}
-.landing-search{width:100%;min-height:64px;border:1px solid var(--yo-border);border-radius:21px;background:#fff;box-shadow:0 12px 30px rgba(39,27,19,.1);display:flex;align-items:center;overflow:hidden}.landing-search--compact{min-height:49px;width:215px;border-radius:999px;box-shadow:0 8px 22px rgba(39,27,19,.08)}.landing-search__location{min-width:217px;height:100%;display:flex;align-items:center;gap:10px;padding:0 19px}.landing-search--compact .landing-search__location{min-width:0;width:100%;padding:0 18px}.landing-search__location svg{width:20px;color:var(--yo-orange);stroke-width:2.7;flex:none}.landing-search__location select{width:100%;border:0;outline:0;background:transparent;font-size:14px;font-weight:700;cursor:pointer}.landing-search__divider{width:1px;height:35px;background:var(--yo-border)}.landing-search__query{flex:1;min-width:0}.landing-search__query input{width:100%;height:62px;border:0;outline:0;padding:0 20px;color:var(--yo-ink)}.landing-search__query input::placeholder{color:#8d8d8d}.landing-search__button{width:65px;align-self:stretch;border:0;background:var(--yo-orange);color:#fff;display:grid;place-items:center;transition:background .2s}.landing-search__button:hover{background:var(--yo-orange-dark)}.landing-search__button svg{width:25px;height:25px}
-.landing-mobile-menu{position:fixed;inset:0;pointer-events:none;visibility:hidden;z-index:80}.landing-mobile-menu.is-open{pointer-events:auto;visibility:visible}.landing-mobile-menu__backdrop{position:absolute;inset:0;border:0;background:rgba(0,0,0,.35);opacity:0;transition:opacity .2s}.landing-mobile-menu.is-open .landing-mobile-menu__backdrop{opacity:1}.landing-mobile-menu__panel{position:absolute;right:0;top:0;bottom:0;width:min(88vw,360px);background:#fff;padding:26px;display:flex;flex-direction:column;gap:20px;transform:translateX(100%);transition:transform .25s;box-shadow:-20px 0 50px rgba(0,0,0,.12)}.landing-mobile-menu.is-open .landing-mobile-menu__panel{transform:translateX(0)}.landing-mobile-menu__heading{display:flex;align-items:center;justify-content:space-between}.landing-mobile-menu__heading button{border:0;background:#f7f5f2;border-radius:50%;padding:9px}.landing-mobile-menu__panel>a{display:flex;align-items:center;gap:10px;font-weight:700;padding:11px 4px}.landing-mobile-menu__panel>a svg{width:20px}.landing-mobile-menu__session{margin-top:auto;justify-content:center;border:1px solid var(--yo-border);border-radius:999px}
-.landing-hero{min-height:502px;display:grid;grid-template-columns:49% 51%;align-items:center;position:relative}.landing-hero__copy{position:relative;z-index:3;padding:40px 0 28px 4px}.landing-hero h1{font-size:clamp(43px,4.5vw,61px);line-height:1.04;letter-spacing:-3px;font-weight:850;margin:0 0 21px}.landing-hero h1 span{color:var(--yo-orange)}.landing-hero__copy>p{color:#535353;font-size:17px;line-height:1.65;margin:0 0 28px}.landing-hero__copy>.landing-search{width:590px;max-width:112%}.landing-hero__benefits{display:flex;gap:34px;margin-top:34px}.landing-hero__benefits>div{display:flex;gap:11px;align-items:center}.landing-hero__benefits>div>span{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;color:#2e9c2d;background:#f0faeb}.landing-hero__benefits svg{width:22px}.landing-hero__benefits p{display:flex;flex-direction:column;margin:0;font-size:13px}.landing-hero__benefits strong{font-size:13px}.landing-hero__benefits small{margin-top:2px;color:#4d4d4d}
-.landing-hero__visual{height:100%;min-width:0;position:relative;display:flex;align-items:center;justify-content:center}.landing-hero__visual>img{width:108%;height:455px;object-fit:cover;object-position:50% 53%;border-radius:48% 40% 42% 48%;filter:saturate(1.18) contrast(1.02);position:relative;z-index:1;-webkit-mask-image:radial-gradient(ellipse 60% 60% at 52% 51%,#000 67%,transparent 100%);mask-image:radial-gradient(ellipse 60% 60% at 52% 51%,#000 67%,transparent 100%)}.landing-hero__glow{position:absolute;width:95%;height:82%;border-radius:50%;background:radial-gradient(circle,#fff2df 0,rgba(255,247,235,.3) 55%,transparent 72%)}.landing-hero__local-card{position:absolute;z-index:4;right:1%;bottom:35px;width:223px;min-height:103px;border:1px solid rgba(230,225,220,.9);border-radius:20px;background:rgba(255,255,255,.94);box-shadow:var(--yo-shadow);display:flex;align-items:flex-start;gap:12px;padding:19px;backdrop-filter:blur(8px)}.landing-hero__local-card>span{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;color:#329b36;background:#eef9ec;flex:none}.landing-hero__local-card svg{width:20px}.landing-hero__local-card p{margin:1px 0 0;display:flex;flex-direction:column;font-size:14px}.landing-hero__local-card small{color:#4b4b4b;font-size:12px;line-height:1.55;margin-top:7px}
-.landing-section{margin-top:25px}.landing-section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.landing-section-title h2,.landing-why>h2{font-size:21px;letter-spacing:-.45px;margin:0;font-weight:800}.landing-section-title a{display:inline-flex;align-items:center;gap:8px;color:var(--yo-orange);font-weight:700;font-size:13px}.landing-section-title svg{width:17px}.landing-categories__track{display:grid;grid-template-columns:repeat(10,1fr);gap:13px}.landing-category-card{min-width:0;height:147px;border:1px solid var(--yo-border);border-radius:20px;background:#fff;box-shadow:0 8px 18px rgba(38,27,19,.065);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;transition:transform .2s,box-shadow .2s}.landing-category-card:hover{transform:translateY(-3px);box-shadow:var(--yo-shadow)}.landing-category-card>span{height:82px;display:grid;place-items:center;font-size:62px;line-height:1;filter:drop-shadow(0 8px 7px rgba(55,30,8,.18));transform:rotate(-2deg)}.landing-category-card strong{font-size:13px;font-weight:650}.landing-category-card.is-muted>span{font-size:24px;letter-spacing:3px;filter:none;transform:none}
-.landing-restaurants{margin-top:39px}.landing-restaurants__grid{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:21px}.landing-restaurant-card{height:252px;border-radius:18px;border:1px solid var(--yo-border);overflow:hidden;background:#fff;box-shadow:0 9px 20px rgba(39,27,19,.075);transition:transform .2s,box-shadow .2s}.landing-restaurant-card:hover{transform:translateY(-3px);box-shadow:var(--yo-shadow)}.landing-restaurant-card__image{height:132px;overflow:hidden;position:relative;background:#f3f0ec}.landing-restaurant-card__image>img{width:100%;height:100%;object-fit:cover;transition:transform .35s}.landing-restaurant-card:hover .landing-restaurant-card__image>img{transform:scale(1.035)}.landing-restaurant-card__image>span{position:absolute;left:0;top:8px;background:#2ca642;color:#fff;border-radius:0 999px 999px 0;padding:5px 12px;font-size:12px;font-weight:800}.landing-restaurant-card__image>span.is-new{background:var(--yo-orange)}.landing-restaurant-card__favorite{position:absolute;right:11px;top:10px;width:31px;height:31px;border:0;border-radius:50%;display:grid;place-items:center;background:rgba(28,21,16,.28);color:#fff;backdrop-filter:blur(4px)}.landing-restaurant-card__favorite svg{width:21px}.landing-restaurant-card__body{padding:12px 14px}.landing-restaurant-card h3{font-size:14px;line-height:1.2;margin:0 0 8px;font-weight:800;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.landing-restaurant-card__meta{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#555;font-size:12px}.landing-restaurant-card__meta+.landing-restaurant-card__meta{margin-top:8px;color:#333}.landing-restaurant-card__meta p{margin:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.landing-restaurant-card__meta p:last-child{display:flex;align-items:center;gap:3px;flex:none}.landing-restaurant-card__meta svg{width:13px;height:13px;fill:#f8a51c;color:#f8a51c}.landing-restaurant-card__meta strong{color:#278c34;letter-spacing:2px}.landing-restaurants__next{position:absolute;width:50px;height:50px;right:-26px;top:73px;display:grid;place-items:center;border-radius:50%;background:#fff;border:1px solid var(--yo-border);box-shadow:var(--yo-shadow)}.landing-restaurants__next svg{width:21px}.landing-restaurant-card--skeleton{background:linear-gradient(100deg,#f5f3f0 25%,#fff 45%,#f5f3f0 65%);background-size:250% 100%;animation:landing-shimmer 1.35s infinite}@keyframes landing-shimmer{to{background-position-x:-250%}}.landing-restaurants__empty{border:1px solid var(--yo-border);border-radius:18px;padding:32px;display:flex;justify-content:space-between;align-items:center;color:var(--yo-muted)}.landing-restaurants__empty a{color:var(--yo-orange);display:flex;align-items:center;gap:8px;font-weight:700}.landing-restaurants__empty svg{width:18px}
-.landing-promotion-card{min-height:184px;margin-top:30px;padding:27px 45px;border-radius:21px;background:linear-gradient(102deg,#fff8ed 0,#fffdf9 46%,#fff0dc 100%);display:grid;grid-template-columns:260px 170px 1fr;align-items:center;position:relative;overflow:hidden}.landing-promotion-card h2{margin:0;font-size:27px;line-height:1.16}.landing-promotion-card h2 span{color:var(--yo-orange)}.landing-promotion-card p{margin:15px 0 0;color:#666;font-size:13px;line-height:1.6}.landing-promotion-card>a{background:var(--yo-orange);color:#fff;justify-self:center;border-radius:12px;padding:14px 24px;font-size:13px;font-weight:800;box-shadow:0 9px 18px rgba(255,79,10,.2)}.landing-promotion-card__art{height:100%;display:flex;align-items:center;justify-content:center}.landing-promotion-card__ticket{font-size:65px;font-weight:900;color:#fff;background:linear-gradient(145deg,#ff671d,#ff4100);width:145px;height:94px;border-radius:22px;display:grid;place-items:center;transform:rotate(-8deg);box-shadow:0 18px 26px rgba(244,71,8,.23);z-index:2}.landing-promotion-card__gift{font-size:105px;margin-left:-6px;filter:drop-shadow(0 17px 17px rgba(110,61,23,.16));transform:rotate(4deg)}
-.landing-why{margin-top:25px}.landing-why__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:15px}.landing-why article{min-height:104px;border:1px solid var(--yo-border);border-radius:18px;padding:15px;display:flex;align-items:center;gap:14px;box-shadow:0 7px 18px rgba(39,27,19,.05)}.landing-why article>span{width:67px;height:67px;flex:none;border-radius:14px;display:grid;place-items:center}.landing-why article>span svg{width:34px;height:34px}.landing-why .is-orange{color:#ef6b1c;background:#fff4e7}.landing-why .is-green{color:#57972f;background:#eef6e2}.landing-why .is-gold{color:#daa626;background:#fff5d8}.landing-why .is-pink{color:#e3485e;background:#fff0f2}.landing-why h3{margin:0 0 8px;font-size:13px;line-height:1.2}.landing-why p{margin:0;color:#5d5d5d;font-size:11px;line-height:1.5}
-.landing-app-banner{min-height:105px;margin-top:29px;padding:22px 28px;border-radius:20px;background:linear-gradient(105deg,#f5f6eb,#fafbf7 49%,#f0f3e9);display:grid;grid-template-columns:1fr auto auto;gap:25px;align-items:center}.landing-app-banner h2{margin:0;font-size:21px}.landing-app-banner h2 span{color:var(--yo-orange)}.landing-app-banner p{margin:5px 0 0;font-size:12px;color:#656565}.landing-app-banner__stores{display:flex;gap:10px}.landing-app-banner__stores>span{min-width:143px;height:45px;background:#050505;color:#fff;border-radius:6px;display:grid;grid-template-columns:28px 1fr;grid-template-rows:17px 19px;padding:5px 10px;font-size:23px;line-height:1}.landing-app-banner__stores small{font-size:8px;align-self:end}.landing-app-banner__stores strong{font-size:15px;font-weight:550}.landing-app-banner__qr{display:flex;align-items:center;gap:9px}.landing-app-banner__qr>span{width:52px;height:52px;display:grid;place-items:center;background:#fff;border:2px solid #111;font-size:38px}.landing-app-banner__qr p{margin:0;font-size:10px}
-.landing-footer{padding:34px 0 20px}.landing-footer__grid{display:grid;grid-template-columns:1.35fr repeat(3,1fr) 1.05fr;gap:38px}.landing-footer__brand p{margin-top:18px;color:#333;font-size:12px}.landing-footer h3{font-size:12px;margin:5px 0 12px}.landing-footer__grid>div:not(.landing-footer__brand)>a{display:block;font-size:11px;color:#363636;margin-bottom:8px}.landing-footer a:hover{color:var(--yo-orange)}.landing-footer__social p{display:flex;gap:9px}.landing-footer__social a{width:24px;height:24px;display:grid;place-items:center;border-radius:50%;color:#fff;background:#6e6e6e}.landing-footer__social svg{width:13px}.landing-footer__bottom{border-top:1px solid #f1efec;margin-top:32px;padding-top:20px;display:flex;justify-content:space-between;align-items:center;color:#777;font-size:11px}.landing-footer__bottom>div{display:flex;gap:9px}.landing-footer__bottom button{border:1px solid var(--yo-border);background:#fff;border-radius:999px;padding:9px 15px;color:#686868}
-@media(max-width:1100px){.landing-navbar__links{gap:22px}.landing-navbar__city{display:none}.landing-hero{grid-template-columns:52% 48%}.landing-hero__copy>.landing-search{width:550px}.landing-hero__benefits{gap:20px}.landing-categories__track{overflow-x:auto;grid-template-columns:repeat(10,106px);padding-bottom:15px;scrollbar-width:none}.landing-categories__track::-webkit-scrollbar{display:none}.landing-restaurants__grid{grid-template-columns:repeat(4,250px);overflow-x:auto;padding-bottom:16px;scrollbar-width:none}.landing-restaurants__next{display:none}.landing-why__grid{grid-template-columns:repeat(2,1fr)}.landing-footer__grid{grid-template-columns:1.3fr repeat(2,1fr)}.landing-footer__social{grid-column:2}}
-@media(max-width:780px){.landing-container{width:min(100% - 32px,680px)}.landing-navbar{height:76px;border-bottom:1px solid #f3f0ec}.landing-navbar__inner{gap:15px}.landing-navbar__links{display:none}.landing-navbar__mobile-actions{display:flex}.brand-mark{font-size:31px}.landing-hero{min-height:auto;display:flex;flex-direction:column;padding-top:22px}.landing-hero__copy{width:100%;padding:20px 0 0}.landing-hero h1{font-size:clamp(39px,11vw,53px);letter-spacing:-2.5px}.landing-hero__copy>p{font-size:15px}.landing-hero__copy>.landing-search{width:100%;max-width:none}.landing-hero__visual{width:100%;height:360px;order:2;margin-top:8px}.landing-hero__visual>img{height:350px;width:110%}.landing-hero__local-card{right:0;bottom:20px;transform:scale(.85);transform-origin:right bottom}.landing-hero__benefits{overflow-x:auto;gap:24px;padding-bottom:8px}.landing-hero__benefits>div{min-width:125px}.landing-categories{margin-top:15px}.landing-restaurants{margin-top:30px}.landing-restaurants__grid{grid-template-columns:repeat(4,246px)}.landing-promotion-card{grid-template-columns:1fr auto;padding:25px}.landing-promotion-card__art{display:none}.landing-app-banner{grid-template-columns:1fr}.landing-app-banner__qr{display:none}.landing-app-banner__stores{justify-content:flex-start}.landing-footer__grid{grid-template-columns:repeat(2,1fr)}.landing-footer__brand{grid-column:1/-1}.landing-footer__social{grid-column:auto}}
-@media(max-width:540px){.landing-container{width:min(100% - 24px,480px)}.landing-desktop-break{display:none}.landing-search{min-height:58px;border-radius:18px;display:grid;grid-template-columns:1fr 58px}.landing-search__location,.landing-search__divider{display:none}.landing-search__query input{height:56px;padding-left:18px}.landing-search__button{width:58px}.landing-search--compact{display:flex;width:100%}.landing-search--compact .landing-search__location{display:flex}.landing-hero__visual{height:310px}.landing-hero__visual>img{height:310px;width:125%}.landing-hero__local-card{transform:scale(.74);bottom:8px}.landing-hero__benefits{margin-top:25px}.landing-section-title{margin-bottom:14px}.landing-section-title h2,.landing-why>h2{font-size:19px}.landing-category-card{height:132px}.landing-category-card>span{height:70px;font-size:52px}.landing-promotion-card{grid-template-columns:1fr;gap:20px}.landing-promotion-card>a{justify-self:start}.landing-promotion-card h2{font-size:24px}.landing-why__grid{grid-template-columns:1fr}.landing-why article{min-height:92px}.landing-app-banner__stores{flex-direction:column}.landing-app-banner__stores>span{width:155px}.landing-footer__grid{grid-template-columns:1fr;gap:26px}.landing-footer__brand{grid-column:auto}.landing-footer__bottom{align-items:flex-start;flex-direction:column;gap:16px}.landing-restaurants__empty{flex-direction:column;align-items:flex-start;gap:15px;padding:24px}}
-.yommigo-icon{display:block;max-width:100%;object-fit:contain;object-position:center;flex:none}
-.yommigo-icon-placeholder{display:inline-block;border:1px solid var(--yo-border);border-radius:12px;background:transparent;flex:none}
-.landing-navbar__text-link{display:inline-flex;align-items:center;gap:6px}
-.landing-navbar__text-link .yommigo-icon{width:22px;height:22px}
-.landing-navbar__cart{min-width:44px;min-height:44px}
-.landing-navbar__cart .yommigo-icon{width:28px;height:28px}
-.landing-navbar__session .yommigo-icon{width:23px;height:23px}
-.landing-search__location .yommigo-icon{width:22px;height:22px}
-.landing-search__button .yommigo-icon{width:26px;height:26px}
-.landing-mobile-menu__panel>a{min-height:44px}
-.landing-mobile-menu__panel>a .yommigo-icon{width:25px;height:25px}
-.landing-hero__benefits .yommigo-icon{width:29px;height:29px}
-.landing-hero__local-card .yommigo-icon{width:24px;height:24px}
-.landing-category-card>span{width:86px;height:82px;font-size:0;filter:drop-shadow(0 7px 7px rgba(55,30,8,.12));transform:none}
-.landing-category-card>span .yommigo-icon{width:100%;height:100%;transition:transform .2s ease,filter .2s ease}
-.landing-category-card:hover>span .yommigo-icon{transform:scale(1.04);filter:drop-shadow(0 5px 6px rgba(55,30,8,.1))}
-.landing-restaurant-card__favorite .yommigo-icon{width:23px;height:23px}
-.landing-restaurant-card__meta .yommigo-icon{width:16px;height:16px}
-.landing-restaurant-card__time{display:flex;align-items:center;gap:4px}
-.landing-promotion-card__icon{width:118px;height:118px;margin-left:-3px;filter:drop-shadow(0 12px 12px rgba(110,61,23,.12));transform:rotate(3deg);transition:transform .2s ease}
-.landing-promotion-card:hover .landing-promotion-card__icon{transform:translateY(-3px) rotate(3deg) scale(1.02)}
-.landing-why article>span .yommigo-icon{width:42px;height:42px;transition:transform .2s ease}
-.landing-why article:hover>span .yommigo-icon{transform:translateY(-2px) scale(1.03)}
-.landing-footer__bottom button{min-height:44px}
-@media(max-width:780px){
-  .landing-footer__grid>div:not(.landing-footer__brand)>a{min-height:44px;display:flex;align-items:center;margin-bottom:0}
-  .landing-footer__social a{width:44px;height:44px}
+:root {
+  --yo-orange: #ff4f0a;
+  --yo-orange-dark: #e84605;
+  --yo-green: #2f9b42;
+  --yo-ink: #1e1b18;
+  --yo-muted: #6f6964;
+  --yo-surface: #ffffff;
+  --yo-surface-soft: #faf8f5;
+  --yo-border: #ebe6e1;
+  --yo-radius-sm: 14px;
+  --yo-radius-md: 20px;
+  --yo-radius-lg: 28px;
+  --yo-shadow: 0 6px 24px rgba(36, 31, 28, 0.06);
+  --yo-shadow-hover: 0 14px 34px rgba(36, 31, 28, 0.1);
+  --yo-transition: 200ms ease;
 }
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--yo-surface);
+  color: var(--yo-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-rendering: optimizeLegibility;
+}
+button, input, select { font: inherit; }
+a { color: inherit; text-decoration: none; }
+a, button, input, select { -webkit-tap-highlight-color: transparent; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid rgba(255, 79, 10, 0.32);
+  outline-offset: 3px;
+}
+
+.landing-page { overflow: hidden; background: var(--yo-surface); }
+.landing-container { width: min(calc(100% - 48px), 1180px); margin-inline: auto; }
+
+.brand-mark {
+  position: relative;
+  width: 190px;
+  height: 90px;
+  display: block;
+  flex: none;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #87952f;
+  box-shadow: 0 9px 24px rgba(92, 105, 35, 0.18);
+}
+.brand-mark img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 145px;
+  height: 145px;
+  max-width: none;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+}
+.brand-mark--compact { width: 132px; height: 62px; border-radius: 18px; }
+.brand-mark--compact img { width: 100px; height: 100px; }
+
+.landing-navbar {
+  position: relative;
+  z-index: 30;
+  height: 104px;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.96);
+}
+.landing-navbar__inner { height: 100%; display: flex; align-items: center; gap: 26px; }
+.landing-navbar__city { margin-right: auto; }
+.landing-navbar__links { display: flex; align-items: center; gap: 24px; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.landing-navbar__text-link { min-height: 48px; display: inline-flex; align-items: center; gap: 9px; transition: color var(--yo-transition); }
+.landing-navbar__text-link:hover { color: var(--yo-orange); }
+.landing-navbar__text-link svg { width: 28px; height: 28px; }
+.landing-navbar__cart {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition: background var(--yo-transition), transform var(--yo-transition);
+}
+.landing-navbar__cart:hover { background: var(--yo-surface-soft); transform: translateY(-1px); }
+.landing-navbar__cart .yommigo-icon { position: absolute; left: 50%; top: 50%; width: 110px; height: 110px; max-width: none; transform: translate(-50%, -50%); }
+.landing-navbar__cart span {
+  position: absolute;
+  top: -2px;
+  right: -5px;
+  min-width: 20px;
+  height: 20px;
+  padding-inline: 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--yo-orange);
+  color: #fff;
+  font-size: 11px;
+}
+.landing-navbar__session {
+  min-height: 48px;
+  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--yo-border);
+  border-radius: 999px;
+  box-shadow: var(--yo-shadow);
+  transition: border-color var(--yo-transition), box-shadow var(--yo-transition), transform var(--yo-transition);
+}
+.landing-navbar__session:hover { border-color: #d9d1ca; box-shadow: var(--yo-shadow-hover); transform: translateY(-1px); }
+.landing-navbar__session .yommigo-icon { width: 110px; height: 110px; max-width: none; margin: -35px; }
+.landing-navbar__mobile-actions { display: none; margin-left: auto; align-items: center; gap: 12px; }
+.landing-navbar__mobile-actions button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.landing-search {
+  width: 100%;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--yo-border);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(36, 31, 28, 0.09);
+  transition: border-color var(--yo-transition), box-shadow var(--yo-transition);
+}
+.landing-search:focus-within { border-color: rgba(255, 79, 10, 0.45); box-shadow: 0 14px 34px rgba(36, 31, 28, 0.12); }
+.landing-search--compact { min-height: 49px; width: 215px; border-radius: 999px; box-shadow: var(--yo-shadow); }
+.landing-search__location { min-width: 217px; height: 100%; padding: 0 19px; display: flex; align-items: center; gap: 10px; }
+.landing-search--compact .landing-search__location { min-width: 0; width: 100%; padding: 0 18px; }
+.landing-search__location .yommigo-icon { width: 110px; height: 110px; max-width: none; margin: -36px; }
+.landing-search--compact .landing-search__location .yommigo-icon { width: 76px; height: 76px; margin: -19px; }
+.landing-search__location select { width: 100%; border: 0; outline: 0; background: transparent; font-size: 14px; font-weight: 700; cursor: pointer; }
+.landing-search__divider { width: 1px; height: 35px; background: var(--yo-border); }
+.landing-search__query { flex: 1; min-width: 0; }
+.landing-search__query input { width: 100%; height: 70px; padding: 0 20px; border: 0; outline: 0; color: var(--yo-ink); background: transparent; }
+.landing-search__query input::placeholder { color: #8d8782; }
+.landing-search__button {
+  min-width: 138px;
+  align-self: stretch;
+  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  background: var(--yo-orange);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background var(--yo-transition), transform var(--yo-transition);
+}
+.landing-search__button:hover { background: var(--yo-orange-dark); }
+.landing-search__button:active { transform: scale(0.98); }
+.landing-search__button .yommigo-icon { width: 110px; height: 110px; max-width: none; margin: -33px; }
+
+.landing-mobile-menu { position: fixed; inset: 0; z-index: 80; visibility: hidden; pointer-events: none; }
+.landing-mobile-menu.is-open { visibility: visible; pointer-events: auto; }
+.landing-mobile-menu__backdrop { position: absolute; inset: 0; border: 0; background: rgba(20, 16, 13, 0.42); opacity: 0; transition: opacity var(--yo-transition); }
+.landing-mobile-menu.is-open .landing-mobile-menu__backdrop { opacity: 1; }
+.landing-mobile-menu__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(88vw, 360px);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #fff;
+  box-shadow: -20px 0 50px rgba(0, 0, 0, 0.12);
+  transform: translateX(100%);
+  transition: transform 220ms ease;
+}
+.landing-mobile-menu.is-open .landing-mobile-menu__panel { transform: translateX(0); }
+.landing-mobile-menu__heading { display: flex; align-items: center; justify-content: space-between; }
+.landing-mobile-menu__heading button { min-width: 44px; min-height: 44px; padding: 9px; border: 0; border-radius: 50%; background: var(--yo-surface-soft); }
+.landing-mobile-menu__panel > a { min-height: 44px; padding: 8px 4px; display: flex; align-items: center; gap: 10px; border-radius: 10px; font-weight: 700; }
+.landing-mobile-menu__panel > a:hover { color: var(--yo-orange); }
+.landing-mobile-menu__panel > a .yommigo-icon { width: 110px; height: 110px; max-width: none; margin: -37.5px; }
+.landing-mobile-menu__session { margin-top: auto; justify-content: center; border: 1px solid var(--yo-border); border-radius: 999px; }
+
+.landing-hero { min-height: 560px; display: grid; grid-template-columns: 50% 50%; align-items: center; position: relative; }
+.landing-hero__copy { position: relative; z-index: 3; padding: 20px 0 22px 4px; }
+.landing-hero h1 { margin: 0 0 22px; font-size: clamp(45px, 4.2vw, 60px); line-height: 1.02; letter-spacing: -3px; font-weight: 850; white-space: nowrap; }
+.landing-hero h1 span { color: var(--yo-orange); }
+.landing-hero__copy > p { margin: 0 0 30px; color: #57514c; font-size: 17px; line-height: 1.65; }
+.landing-hero__copy > .landing-search { width: 600px; max-width: 108%; }
+.landing-hero__benefits { margin-top: 30px; display: flex; gap: 28px; }
+.landing-hero__benefits > div { display: flex; align-items: center; gap: 11px; }
+.landing-hero__benefits > div > span { position: relative; width: 66px; height: 66px; display: grid; place-items: center; border-radius: 50%; background: #f0faeb; }
+.landing-hero__benefits .yommigo-icon { position: absolute; left: 50%; top: 50%; width: 132px; height: 132px; max-width: none; transform: translate(-50%, -50%); }
+.landing-hero__benefits p { margin: 0; display: flex; flex-direction: column; font-size: 13px; }
+.landing-hero__benefits strong { font-size: 13px; }
+.landing-hero__benefits small { margin-top: 2px; color: var(--yo-muted); }
+.landing-hero__visual { --hero-base-x: 80px; height: 560px; min-width: 0; position: relative; display: flex; align-items: center; justify-content: flex-end; transform: translateY(-50px); }
+.landing-hero__visual > :is(img, .dynamic-hero-image-placeholder) {
+  position: relative;
+  z-index: 1;
+  width: min(145%, 850px);
+  max-width: none;
+  flex: none;
+  height: auto;
+  object-fit: contain;
+  transform: translate3d(calc(var(--hero-base-x, 0px) + var(--hero-shift-x, 0px)), var(--hero-shift-y, 0px), 0);
+  transition: transform 180ms ease-out;
+  will-change: transform;
+}
+.dynamic-hero-image-placeholder { display: block; aspect-ratio: 1; background: transparent; }
+.landing-hero__local-card {
+  position: absolute;
+  z-index: 4;
+  right: 0;
+  bottom: 76px;
+  width: 182px;
+  min-height: 84px;
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid rgba(230, 225, 220, 0.9);
+  border-radius: var(--yo-radius-md);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 20px 46px rgba(36, 31, 28, 0.1), 0 4px 12px rgba(36, 31, 28, 0.05);
+  backdrop-filter: blur(8px);
+}
+.landing-hero__local-card > span { position: relative; width: 38px; height: 38px; display: grid; place-items: center; flex: none; border-radius: 50%; background: #eef9ec; }
+.landing-hero__local-card .yommigo-icon { position: absolute; left: 50%; top: 50%; width: 110px; height: 110px; max-width: none; transform: translate(-50%, -50%); }
+.landing-hero__local-card p { margin: 1px 0 0; display: flex; flex-direction: column; font-size: 14px; }
+.landing-hero__local-card small { margin-top: 7px; color: #5d5752; font-size: 12px; line-height: 1.55; }
+
+.landing-section { margin-top: 30px; }
+.landing-categories { margin-top: -30px; }
+.landing-section-title { margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+.landing-section-title h2, .landing-why > h2 { margin: 0; font-size: 23px; letter-spacing: -0.55px; font-weight: 820; }
+.landing-section-title a { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: var(--yo-orange); font-size: 13px; font-weight: 750; }
+.landing-section-title svg { width: 17px; }
+
+.landing-categories__track { display: grid; grid-template-columns: repeat(10, 1fr); gap: 13px; }
+.landing-category-card {
+  min-width: 0;
+  height: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid var(--yo-border);
+  border-radius: var(--yo-radius-md);
+  background: #fff;
+  box-shadow: var(--yo-shadow);
+  transition: transform var(--yo-transition), box-shadow var(--yo-transition), border-color var(--yo-transition), background var(--yo-transition);
+}
+.landing-category-card:hover { transform: translateY(-3px); box-shadow: var(--yo-shadow-hover); border-color: #dfd6cf; }
+.landing-category-card:active { transform: translateY(-1px) scale(0.99); }
+.landing-category-card.is-selected { border-color: rgba(255, 79, 10, 0.55); background: #fff8f4; box-shadow: 0 8px 24px rgba(255, 79, 10, 0.11); }
+.landing-category-card > span { width: 118px; height: 112px; display: grid; place-items: center; filter: drop-shadow(0 7px 7px rgba(55, 30, 8, 0.12)); }
+.landing-category-card > span .yommigo-icon { width: 100%; height: 100%; transition: transform var(--yo-transition), filter var(--yo-transition); }
+.landing-category-card:hover > span .yommigo-icon { transform: scale(1.04); filter: drop-shadow(0 5px 6px rgba(55, 30, 8, 0.1)); }
+.landing-category-card strong { font-size: 13px; font-weight: 680; }
+
+.landing-restaurants { margin-top: 44px; }
+.landing-restaurants__grid { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 21px; }
+.landing-restaurant-card {
+  height: 268px;
+  overflow: hidden;
+  border: 1px solid var(--yo-border);
+  border-radius: var(--yo-radius-md);
+  background: #fff;
+  box-shadow: var(--yo-shadow);
+  transition: transform var(--yo-transition), box-shadow var(--yo-transition), border-color var(--yo-transition);
+}
+.landing-restaurant-card:hover { transform: translateY(-3px); border-color: #dfd6cf; box-shadow: var(--yo-shadow-hover); }
+.landing-restaurant-card__image { height: 145px; overflow: hidden; position: relative; background: var(--yo-surface-soft); }
+.landing-restaurant-card__image > img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--yo-transition); }
+.landing-restaurant-card:hover .landing-restaurant-card__image > img { transform: scale(1.03); }
+.landing-restaurant-card__placeholder { width: 100%; height: 100%; display: grid; place-items: center; color: #928b85; font-size: 12px; background: linear-gradient(135deg, #f7f4f0, #eee8e2); }
+.landing-restaurant-card__status {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  padding: 6px 13px;
+  border-radius: 0 999px 999px 0;
+  background: #5d5752;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+.landing-restaurant-card__status.is-abierto { background: var(--yo-green); }
+.landing-restaurant-card__status.is-pausado { background: #d58616; }
+.landing-restaurant-card__favorite { position: absolute; right: 11px; top: 10px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgba(28, 21, 16, 0.3); backdrop-filter: blur(4px); }
+.landing-restaurant-card__favorite .yommigo-icon { position: absolute; left: 50%; top: 50%; width: 110px; height: 110px; max-width: none; transform: translate(-50%, -50%); }
+.landing-restaurant-card__body { padding: 14px 15px; }
+.landing-restaurant-card h3 { margin: 0 0 9px; overflow: hidden; color: var(--yo-ink); font-size: 15px; font-weight: 800; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.landing-restaurant-card__meta { min-height: 20px; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #5f5954; font-size: 12px; }
+.landing-restaurant-card__meta + .landing-restaurant-card__meta { margin-top: 7px; }
+.landing-restaurant-card__meta p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.landing-restaurant-card__meta p:last-child { display: flex; align-items: center; gap: 3px; }
+.landing-restaurant-card__meta .yommigo-icon { width: 110px; height: 110px; max-width: none; margin: -43.5px; }
+.landing-restaurant-card__meta strong { color: var(--yo-green); letter-spacing: 1px; }
+.landing-restaurant-card__time { display: flex; align-items: center; gap: 4px; }
+.landing-restaurants__next { position: absolute; right: -25px; top: 88px; width: 50px; height: 50px; display: grid; place-items: center; border: 1px solid var(--yo-border); border-radius: 50%; background: #fff; box-shadow: var(--yo-shadow-hover); transition: transform var(--yo-transition); }
+.landing-restaurants__next:hover { transform: translateX(3px); }
+.landing-restaurants__next svg { width: 21px; }
+.landing-restaurant-card--skeleton { background: linear-gradient(100deg, #f5f3f0 25%, #fff 45%, #f5f3f0 65%); background-size: 250% 100%; animation: landing-shimmer 1.35s infinite; }
+@keyframes landing-shimmer { to { background-position-x: -250%; } }
+.landing-restaurants__empty { padding: 34px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--yo-border); border-radius: var(--yo-radius-md); color: var(--yo-muted); background: var(--yo-surface-soft); }
+.landing-restaurants__empty p { margin: 0; }
+.landing-restaurants__empty a { min-height: 44px; display: flex; align-items: center; gap: 8px; color: var(--yo-orange); font-weight: 750; }
+.landing-restaurants__empty svg { width: 18px; }
+
+.landing-promotion-card {
+  min-height: 184px;
+  margin-top: 34px;
+  padding: 28px 45px;
+  display: grid;
+  grid-template-columns: 290px 180px 1fr;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--yo-radius-md);
+  background: linear-gradient(102deg, #fff8ed 0, #fffdf9 46%, #fff0dc 100%);
+}
+.landing-promotion-card h2 { margin: 0; font-size: 27px; line-height: 1.16; }
+.landing-promotion-card h2 span { color: var(--yo-orange); }
+.landing-promotion-card p { margin: 15px 0 0; color: var(--yo-muted); font-size: 13px; line-height: 1.6; }
+.landing-promotion-card > a { justify-self: center; padding: 14px 24px; border-radius: 12px; background: var(--yo-orange); color: #fff; box-shadow: 0 9px 18px rgba(255, 79, 10, 0.2); font-size: 13px; font-weight: 800; transition: background var(--yo-transition), transform var(--yo-transition); }
+.landing-promotion-card > a:hover { background: var(--yo-orange-dark); transform: translateY(-2px); }
+.landing-promotion-card__art { height: 100%; display: flex; align-items: center; justify-content: center; }
+.landing-promotion-card__ticket { z-index: 2; width: 145px; height: 94px; display: grid; place-items: center; border-radius: 22px; background: linear-gradient(145deg, #ff671d, #ff4100); color: #fff; box-shadow: 0 18px 26px rgba(244, 71, 8, 0.23); font-size: 65px; font-weight: 900; transform: rotate(-8deg); }
+.landing-promotion-card__icon { width: 110px; height: 110px; max-width: none; margin-left: -3px; filter: drop-shadow(0 12px 12px rgba(110, 61, 23, 0.12)); transform: rotate(3deg); transition: transform var(--yo-transition); }
+.landing-promotion-card:hover .landing-promotion-card__icon { transform: translateY(-3px) rotate(3deg) scale(1.02); }
+
+.landing-why { margin-top: 38px; }
+.landing-why__grid { margin-top: 18px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.landing-why article { min-height: 108px; padding: 16px; display: flex; align-items: center; gap: 14px; border: 1px solid var(--yo-border); border-radius: 18px; box-shadow: var(--yo-shadow); transition: transform var(--yo-transition), box-shadow var(--yo-transition); }
+.landing-why article:hover { transform: translateY(-2px); box-shadow: var(--yo-shadow-hover); }
+.landing-why article > span { position: relative; width: 67px; height: 67px; display: grid; place-items: center; flex: none; border-radius: 14px; }
+.landing-why article > span .yommigo-icon { position: absolute; left: 50%; top: 50%; width: 110px; height: 110px; max-width: none; transform: translate(-50%, -50%); transition: transform var(--yo-transition); }
+.landing-why article:hover > span .yommigo-icon { transform: translate(-50%, calc(-50% - 2px)) scale(1.03); }
+.landing-why .is-orange { background: #fff4e7; }
+.landing-why .is-green { background: #eef6e2; }
+.landing-why .is-gold { background: #fff5d8; }
+.landing-why .is-pink { background: #fff0f2; }
+.landing-why h3 { margin: 0 0 8px; font-size: 13px; line-height: 1.2; }
+.landing-why p { margin: 0; color: #625c57; font-size: 11px; line-height: 1.5; }
+
+.landing-footer { margin-top: 44px; padding: 38px 0 22px; border-top: 1px solid #f1ede9; }
+.landing-footer__grid { display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 48px; }
+.landing-footer__brand p { margin-top: 18px; color: var(--yo-muted); font-size: 12px; }
+.landing-footer h3 { margin: 5px 0 14px; font-size: 12px; }
+.landing-footer nav > a, .landing-footer__info > span { min-height: 32px; display: flex; align-items: center; color: #4d4844; font-size: 11px; }
+.landing-footer nav > a { transition: color var(--yo-transition); }
+.landing-footer nav > a:hover { color: var(--yo-orange); }
+.landing-footer__info > span { color: #817a74; }
+.landing-footer__bottom { margin-top: 34px; padding-top: 20px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1ede9; color: #817a74; font-size: 11px; }
+.landing-footer__bottom p { margin: 0; }
+
+.yommigo-icon { display: block; max-width: 100%; object-fit: contain; object-position: center; flex: none; }
+.yommigo-icon-placeholder { display: inline-block; flex: none; border: 1px solid var(--yo-border); border-radius: 12px; background: transparent; }
+
+@media (max-width: 1100px) {
+  .landing-navbar__city { display: none; }
+  .landing-navbar__links { gap: 22px; }
+  .landing-hero { grid-template-columns: 50% 50%; }
+  .landing-hero__visual { transform: translateY(-45px); }
+  .landing-hero__visual > :is(img, .dynamic-hero-image-placeholder) { width: min(175%, 850px); }
+  .landing-hero__copy > .landing-search { width: 550px; }
+  .landing-hero__benefits { gap: 20px; }
+  .landing-categories__track { overflow-x: auto; grid-template-columns: repeat(10, 108px); padding: 2px 2px 16px; scrollbar-width: none; scroll-snap-type: x proximity; }
+  .landing-categories__track::-webkit-scrollbar { display: none; }
+  .landing-category-card { scroll-snap-align: start; }
+  .landing-restaurants__grid { overflow-x: auto; grid-template-columns: repeat(4, 254px); padding: 2px 2px 17px; scrollbar-width: none; scroll-snap-type: x proximity; }
+  .landing-restaurants__grid::-webkit-scrollbar { display: none; }
+  .landing-restaurant-card { scroll-snap-align: start; }
+  .landing-restaurants__next { display: none; }
+  .landing-why__grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 780px) {
+  .landing-container { width: min(calc(100% - 32px), 680px); }
+  .landing-navbar { height: 86px; border-bottom: 1px solid #f3f0ec; }
+  .landing-navbar__inner { gap: 15px; }
+  .landing-navbar__links { display: none; }
+  .landing-navbar__mobile-actions { display: flex; }
+  .brand-mark { width: 156px; height: 74px; border-radius: 20px; }
+  .brand-mark img { width: 120px; height: 120px; }
+  .landing-hero { min-height: auto; display: flex; flex-direction: column; padding-top: 22px; }
+  .landing-hero__copy { width: 100%; padding: 20px 0 0; }
+  .landing-hero h1 { font-size: clamp(40px, 10vw, 54px); letter-spacing: -2.5px; white-space: normal; }
+  .landing-hero__copy > p { font-size: 15px; }
+  .landing-hero__copy > .landing-search { width: 100%; max-width: none; }
+  .landing-hero__visual { --hero-base-x: 0px; order: 2; width: 100%; height: 400px; margin-top: -4px; justify-content: center; transform: translateY(-30px); }
+  .landing-hero__visual > :is(img, .dynamic-hero-image-placeholder) { width: min(155%, 780px); }
+.landing-hero__local-card { right: 0; bottom: 32px; transform: scale(0.72); transform-origin: right bottom; }
+  .landing-hero__benefits { overflow-x: auto; gap: 24px; padding-bottom: 8px; scrollbar-width: none; }
+  .landing-hero__benefits > div { min-width: 126px; }
+  .landing-categories { margin-top: 18px; }
+  .landing-restaurants { margin-top: 34px; }
+  .landing-promotion-card { grid-template-columns: 1fr auto; padding: 25px; }
+  .landing-promotion-card__art { display: none; }
+  .landing-footer__grid { grid-template-columns: repeat(2, 1fr); gap: 30px; }
+  .landing-footer__brand { grid-column: 1 / -1; }
+}
+@media (max-width: 540px) {
+  .landing-container { width: min(calc(100% - 24px), 480px); }
+  .landing-desktop-break { display: none; }
+  .landing-search { min-height: 58px; display: grid; grid-template-columns: 1fr 100px; border-radius: 18px; }
+  .landing-search__location, .landing-search__divider { display: none; }
+  .landing-search__query input { height: 56px; padding-left: 18px; }
+  .landing-search__button { min-width: 100px; padding-inline: 12px; }
+  .landing-search__button .yommigo-icon { width: 110px; height: 110px; max-width: none; margin: -40px; }
+  .landing-search--compact { width: 100%; display: flex; }
+  .landing-search--compact .landing-search__location { display: flex; }
+  .landing-hero__visual { height: 350px; }
+  .landing-hero__visual > :is(img, .dynamic-hero-image-placeholder) { width: min(155%, 780px); }
+.landing-hero__local-card { right: 0; bottom: 24px; transform: scale(0.64); }
+  .landing-hero__benefits { margin-top: 25px; }
+  .landing-section-title { margin-bottom: 14px; }
+  .landing-section-title h2, .landing-why > h2 { font-size: 20px; }
+  .landing-category-card { height: 150px; }
+  .landing-category-card > span { width: 104px; height: 98px; }
+  .landing-promotion-card { grid-template-columns: 1fr; gap: 20px; }
+  .landing-promotion-card > a { justify-self: start; }
+  .landing-promotion-card h2 { font-size: 24px; }
+  .landing-why__grid { grid-template-columns: 1fr; }
+  .landing-why article { min-height: 94px; }
+  .landing-footer__grid { grid-template-columns: 1fr; gap: 25px; }
+  .landing-footer__brand { grid-column: auto; }
+  .landing-footer nav > a, .landing-footer__info > span { min-height: 44px; }
+  .landing-footer__bottom { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .landing-restaurants__empty { padding: 24px; flex-direction: column; align-items: flex-start; gap: 15px; }
+}
+@media (max-width: 380px) {
+  .landing-hero h1 { font-size: 38px; }
+  .landing-search { grid-template-columns: 1fr 58px; }
+  .landing-search__button { min-width: 58px; width: 58px; padding: 0; }
+  .landing-search__button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .landing-hero__visual { height: 340px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  .landing-hero__visual > :is(img, .dynamic-hero-image-placeholder) { animation: none; transform: translate3d(var(--hero-base-x, 0px), 0, 0) !important; transition: none; }
+}

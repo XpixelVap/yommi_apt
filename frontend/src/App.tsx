@@ -23,17 +23,17 @@ export default function App() {
 
   useEffect(() => {
     if (token) {
-      fetchWithAuth(`${import.meta.env.VITE_API_URL || ""}/api/auth/me`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          login(data.user, token);
-        } else {
-          logout();
-        }
-      })
-      .catch(() => logout())
-      .finally(() => setLoading(false));
+      fetchWithAuth(`${import.meta.env.VITE_API_URL || ''}/api/auth/me`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.user) {
+            login(data.user, token);
+          } else {
+            logout();
+          }
+        })
+        .catch(() => logout())
+        .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
@@ -45,8 +45,8 @@ export default function App() {
     <BrowserRouter>
       <Suspense fallback={<div className="flex h-screen items-center justify-center">Cargando...</div>}>
         <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
+          <Route path="/" element={<Home />} />
+          <Route element={<Layout />}>
             <Route path="login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
             <Route path="register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
             <Route path="restaurants" element={<RestaurantDirectory />} />
@@ -56,7 +56,6 @@ export default function App() {
             <Route path="cart" element={<Cart />} />
             <Route path="last-order" element={<LastOrder />} />
             <Route path="track/:id" element={<OrderTracking />} />
-            
             <Route path="dashboard" element={
               !user ? <Navigate to="/login" /> :
               user.role === 'ADMIN' ? <AdminDashboard /> :
