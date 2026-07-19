@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/tests/registration-flow.test.ts src/tests/order-operations.test.ts",
+    "test": "node --import tsx --test src/tests/registration-flow.test.ts src/tests/order-operations.test.ts src/tests/hero-catalog.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -1,5 +1,5 @@
 import type { FormEvent, PointerEvent as ReactPointerEvent } from 'react';
-import heroBurger from '../../../../design/assets/hero/webp/512/hamburguesa-hero.webp';
+import { DynamicHeroImage } from './DynamicHeroImage';
 import { YommigoIcon } from '../YommigoIcon';
 import { SearchBar } from './SearchBar';
 
@@ -49,7 +49,7 @@ export function Hero({ city, query, onCityChange, onQueryChange, onSearch }: Her
         onPointerLeave={(event) => resetBurgerPosition(event.currentTarget)}
         onPointerCancel={(event) => resetBurgerPosition(event.currentTarget)}
       >
-        <img src={heroBurger} alt="Hamburguesa artesanal con queso y vegetales frescos" width="512" height="512" loading="eager" fetchPriority="high" decoding="async" />
+        <DynamicHeroImage priority loading="eager" />
         <div className="landing-hero__local-card"><span><YommigoIcon name="favoritos" size={110} alt="" loading="eager" /></span><p><strong>Apoya lo local</strong><small>Pide directo a negocios<br />de tu ciudad</small></p></div>
       </div>
     </section>

@@ -65,3 +65,30 @@ Los dos logos oficiales conservan intacto su contenido visual en esta etapa. El 
 ## Separaci&oacute;n entre imagen e interfaz
 
 Las im&aacute;genes contienen &uacute;nicamente el recurso visual base. Estados, badges, n&uacute;meros, textos din&aacute;micos, interacciones y animaciones se agregan mediante React y CSS; nunca deben incorporarse dentro del PNG o WebP.
+
+## Hero dinámico
+
+La fuente oficial del hero público es `design/assets/hero/`. Para incorporar una imagen:
+
+1. Agregar únicamente el PNG máster dentro de `design/assets/hero/`.
+2. Nombrarlo con la convención `hero-<categoria>-<momento>.png`.
+3. Ejecutar `npm run optimize-assets` desde la raíz.
+4. Confirmar que `design/assets/hero/webp/index.json` incluya la variante `512`.
+
+Categorías permitidas: `hamburguesa`, `pizza`, `tacos`, `sushi`, `ensalada`, `desayuno`, `antojitos`, `postres`, `bebidas` y `cafe`.
+
+Momentos permitidos:
+
+- `manana`: 05:00–10:59.
+- `comida`: 11:00–15:59.
+- `tarde`: 16:00–18:59.
+- `noche`: 19:00–04:59.
+- `general`: variante disponible para cualquier bloque sin coincidencia contextual.
+
+Ejemplos válidos: `hero-desayuno-manana.png`, `hero-pizza-noche.png` y `hero-sushi-general.png`.
+
+La selección usa la fecha local y el bloque horario. Cuando existen varias imágenes compatibles, una función determinista basada en `YYYY-MM-DD + momento` mantiene la misma imagen durante todo el bloque y permite rotación natural al cambiar de día o momento. No se usa aleatoriedad por render ni `localStorage` como fuente de verdad.
+
+Orden de fallback: coincidencia contextual, hero `general`, `hamburguesa-hero.webp` oficial y, únicamente si el archivo oficial falta, un espacio visual neutro. Los nombres inválidos se ignoran sin romper producción y generan una advertencia durante desarrollo.
+
+El frontend carga únicamente el WebP 512 seleccionado mediante un loader diferido. No deben importarse PNG máster ni copiarse assets a `public/`.
