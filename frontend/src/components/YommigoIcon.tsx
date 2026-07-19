@@ -10,23 +10,18 @@ import postres128 from '../../../design/assets/food-icons/webp/128/postres.webp'
 import snacks128 from '../../../design/assets/food-icons/webp/128/snacks.webp';
 import sushi128 from '../../../design/assets/food-icons/webp/128/sushi.webp';
 import taco128 from '../../../design/assets/food-icons/webp/128/taco.webp';
-import busqueda32 from '../../../design/assets/ui-icons/webp/32/busqueda.webp';
-import calificacion32 from '../../../design/assets/ui-icons/webp/32/calificacion.webp';
-import calificacion64 from '../../../design/assets/ui-icons/webp/64/calificacion.webp';
-import carritoCompras32 from '../../../design/assets/ui-icons/webp/32/carrito-compras.webp';
-import delivery32 from '../../../design/assets/ui-icons/webp/32/delivery.webp';
-import delivery64 from '../../../design/assets/ui-icons/webp/64/delivery.webp';
-import favoritos32 from '../../../design/assets/ui-icons/webp/32/favoritos.webp';
-import favoritos64 from '../../../design/assets/ui-icons/webp/64/favoritos.webp';
-import notificaciones32 from '../../../design/assets/ui-icons/webp/32/notificaciones.webp';
-import pago32 from '../../../design/assets/ui-icons/webp/32/pago.webp';
-import pago64 from '../../../design/assets/ui-icons/webp/64/pago.webp';
-import perfil32 from '../../../design/assets/ui-icons/webp/32/perfil.webp';
-import pickup32 from '../../../design/assets/ui-icons/webp/32/pickup.webp';
-import promociones32 from '../../../design/assets/ui-icons/webp/32/promociones.webp';
+import busqueda128 from '../../../design/assets/ui-icons/webp/128/busqueda.webp';
+import calificacion128 from '../../../design/assets/ui-icons/webp/128/calificacion.webp';
+import carritoCompras128 from '../../../design/assets/ui-icons/webp/128/carrito-compras.webp';
+import delivery128 from '../../../design/assets/ui-icons/webp/128/delivery.webp';
+import favoritos128 from '../../../design/assets/ui-icons/webp/128/favoritos.webp';
+import notificaciones128 from '../../../design/assets/ui-icons/webp/128/notificaciones.webp';
+import pago128 from '../../../design/assets/ui-icons/webp/128/pago.webp';
+import perfil128 from '../../../design/assets/ui-icons/webp/128/perfil.webp';
+import pickup128 from '../../../design/assets/ui-icons/webp/128/pickup.webp';
 import promociones128 from '../../../design/assets/ui-icons/webp/128/promociones.webp';
-import tiempo32 from '../../../design/assets/ui-icons/webp/32/tiempo.webp';
-import ubicacion32 from '../../../design/assets/ui-icons/webp/32/ubicacion.webp';
+import tiempo128 from '../../../design/assets/ui-icons/webp/128/tiempo.webp';
+import ubicacion128 from '../../../design/assets/ui-icons/webp/128/ubicacion.webp';
 
 export const YOMMIGO_FOOD_ICON_NAMES = [
   'hamburguesa',
@@ -60,7 +55,7 @@ export type YommigoIconName =
   | (typeof YOMMIGO_FOOD_ICON_NAMES)[number]
   | (typeof YOMMIGO_SERVICE_ICON_NAMES)[number];
 
-export type YommigoIconSize = 32 | 64 | 128 | 512;
+export type YommigoIconSize = 32 | 64 | 110 | 128 | 512;
 
 interface YommigoIconProps {
   name: YommigoIconName;
@@ -82,18 +77,18 @@ const ICON_SOURCES: Record<YommigoIconName, Partial<Record<YommigoIconSize, stri
   postres: { 128: postres128 },
   bebidas: { 128: bebidas128 },
   cafe: { 128: cafe128 },
-  busqueda: { 32: busqueda32 },
-  calificacion: { 32: calificacion32, 64: calificacion64 },
-  'carrito-compras': { 32: carritoCompras32 },
-  delivery: { 32: delivery32, 64: delivery64 },
-  favoritos: { 32: favoritos32, 64: favoritos64 },
-  notificaciones: { 32: notificaciones32 },
-  pago: { 32: pago32, 64: pago64 },
-  perfil: { 32: perfil32 },
-  pickup: { 32: pickup32 },
-  promociones: { 32: promociones32, 128: promociones128 },
-  tiempo: { 32: tiempo32 },
-  ubicacion: { 32: ubicacion32 },
+  busqueda: { 110: busqueda128 },
+  calificacion: { 110: calificacion128 },
+  'carrito-compras': { 110: carritoCompras128 },
+  delivery: { 110: delivery128 },
+  favoritos: { 110: favoritos128 },
+  notificaciones: { 110: notificaciones128 },
+  pago: { 110: pago128 },
+  perfil: { 110: perfil128 },
+  pickup: { 110: pickup128 },
+  promociones: { 110: promociones128 },
+  tiempo: { 110: tiempo128 },
+  ubicacion: { 110: ubicacion128 },
 };
 
 export function YommigoIcon({
