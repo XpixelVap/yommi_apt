@@ -1,24 +1,46 @@
 [
   {
-    "id": "hamburguesa-hero",
-    "source": "hamburguesa-hero.png",
-    "slug": "hamburguesa-hero",
+    "id": "hero-hamburguesa-general",
+    "source": "hero-hamburguesa-general.png",
+    "slug": "hero-hamburguesa-general",
     "original": {
       "width": 1536,
       "height": 1024,
       "bytes": 3050753
     },
     "files": {
-      "32": "32/hamburguesa-hero.webp",
-      "64": "64/hamburguesa-hero.webp",
-      "128": "128/hamburguesa-hero.webp",
-      "512": "512/hamburguesa-hero.webp"
+      "32": "32/hero-hamburguesa-general.webp",
+      "64": "64/hero-hamburguesa-general.webp",
+      "128": "128/hero-hamburguesa-general.webp",
+      "512": "512/hero-hamburguesa-general.webp"
     },
     "bytes": {
       "32": 882,
       "64": 1778,
       "128": 4746,
       "512": 45438
+    }
+  },
+  {
+    "id": "hero-pizza-noche",
+    "source": "hero-pizza-noche.png",
+    "slug": "hero-pizza-noche",
+    "original": {
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3221633
+    },
+    "files": {
+      "32": "32/hero-pizza-noche.webp",
+      "64": "64/hero-pizza-noche.webp",
+      "128": "128/hero-pizza-noche.webp",
+      "512": "512/hero-pizza-noche.webp"
+    },
+    "bytes": {
+      "32": 1006,
+      "64": 2372,
+      "128": 5978,
+      "512": 57984
     }
   }
 ]
