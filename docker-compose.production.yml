@@ -1,0 +1,144 @@
+name: yommigo-production
+
+x-logging: &default_logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    logging: *default_logging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      TZ: ${TZ:-America/Tijuana}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_private
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    shm_size: 256mb
+
+  operations:
+    profiles: ["operations"]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: operations
+    environment: &backend_environment
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      API_URL: ${API_URL:?API_URL is required}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS is required}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-disabled}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      TZ: ${TZ:-America/Tijuana}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_private
+    stdin_open: true
+    tty: true
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    logging: *default_logging
+    environment: *backend_environment
+    expose:
+      - "3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_private
+      - backend_egress
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL is required}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+    restart: unless-stopped
+    logging: *default_logging
+    expose:
+      - "80"
+    networks:
+      - app_private
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  reverse-proxy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    logging: *default_logging
+    environment:
+      FRONTEND_DOMAIN: ${FRONTEND_DOMAIN:?FRONTEND_DOMAIN is required}
+      WWW_DOMAIN: ${WWW_DOMAIN:?WWW_DOMAIN is required}
+      API_DOMAIN: ${API_DOMAIN:?API_DOMAIN is required}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:?LETSENCRYPT_EMAIL is required}
+      TZ: ${TZ:-America/Tijuana}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - edge
+      - app_private
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:2019/config/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  edge:
+    driver: bridge
+  app_private:
+    driver: bridge
+    internal: true
+  backend_egress:
+    driver: bridge

@@ -10,6 +10,16 @@ WORKDIR /app
 COPY backend backend
 RUN npm run prisma:generate --workspace=backend && npm run build --workspace=backend
 
+# Manual operations image: migrations and one-time ADMIN bootstrap.
+# It is never used as the public backend runtime.
+FROM dependencies AS operations
+ENV NODE_ENV=production
+WORKDIR /app
+COPY backend backend
+RUN npm run prisma:generate --workspace=backend
+USER node
+CMD ["npm", "run", "prisma:validate", "--workspace=backend"]
+
 FROM node:20-bookworm-slim AS production-dependencies
 WORKDIR /app
 COPY package.json package-lock.json ./

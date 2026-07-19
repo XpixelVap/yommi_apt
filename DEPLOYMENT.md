@@ -93,3 +93,15 @@ El comando requiere una terminal interactiva y una conexión válida en `DATABAS
 La contraseña debe tener entre 12 y 72 caracteres e incluir mayúscula, minúscula, número y carácter especial, sin espacios. La creación se protege con un bloqueo transaccional PostgreSQL y una segunda comprobación para impedir dos administradores iniciales concurrentes. El usuario queda con `role=ADMIN`, `provider=email` e `isSuspended=false`. Las ejecuciones posteriores se rechazan; este comando no sirve para administrar o reemplazar usuarios existentes.
 
 No ejecutes el comando desde CI, un Dockerfile o un proceso no interactivo. Nunca pases la contraseña mediante argumentos, variables de entorno, logs o historial de shell.
+
+## Stack productivo manual
+
+La base de Sprint 5 se conserva para desarrollo y CI. El procedimiento de VPS, Caddy, backups, restauración, migraciones, rollback y smoke tests está en `PRODUCTION_DEPLOYMENT.md`.
+
+Validar con:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.production.yml config --quiet
+```
+
+Solo Caddy publica 80/443. PostgreSQL nunca publica puertos. Migraciones y `bootstrap-admin` son manuales mediante el perfil `operations`; nunca forman parte del arranque.

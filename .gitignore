@@ -20,3 +20,5 @@ backend/server.js
 
 # Local upload storage
 uploads/
+!.env.production.example
+backups/

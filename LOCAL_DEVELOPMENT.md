@@ -55,7 +55,7 @@ En otra:
 npm run dev:frontend
 ```
 
-También puede usarse `npm run dev` para ambos procesos. Frontend: `http://localhost:5173`. Backend: `http://localhost:3001`.
+También puede usarse `npm run dev` para ambos procesos. Frontend: `http://localhost:3000`. Backend: `http://localhost:3001`.
 
 ## 5. Comprobaciones
 
@@ -97,3 +97,9 @@ El comando:
 5. muestra solo el resultado mínimo y nunca imprime la contraseña.
 
 La operación es de una sola ejecución por base de datos. No borres ni cambies usuarios para volver a ejecutarla. Para comprobar el acceso, inicia backend y frontend y usa el login actual con las credenciales introducidas.
+
+## Compose local y productivo
+
+`docker-compose.yml` es exclusivamente para PostgreSQL local y publica `localhost:5432`. No debe usarse en producción.
+
+`docker-compose.production.yml` pertenece al procedimiento manual de VPS descrito en `PRODUCTION_DEPLOYMENT.md`. No lo levantes para desarrollo ordinario ni reutilices `.env.production` localmente.
