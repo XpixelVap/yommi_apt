@@ -34,7 +34,7 @@ const configuredOrigins = (values.CORS_ORIGINS ?? '')
   .map(origin => origin.trim())
   .filter(Boolean);
 const developmentOrigins = values.NODE_ENV === 'development'
-  ? ['http://localhost:5173', 'http://127.0.0.1:5173']
+  ? ['http://localhost:3000', 'http://127.0.0.1:3000']
   : [];
 
 export const env = Object.freeze({
